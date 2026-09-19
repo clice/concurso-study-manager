@@ -29,7 +29,7 @@ class CompetitionAdmin(admin.ModelAdmin):
 
 @admin.register(CompetitionStage)
 class CompetitionStageAdmin(admin.ModelAdmin):
-    list_display = ("competition", "position", "name", "stage_type", "scheduled_date")
+    list_display = ("competition", "position", "stage_type", "scheduled_date")
     list_filter = ("stage_type", "eliminatory", "classificatory")
 
 
