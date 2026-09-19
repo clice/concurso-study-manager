@@ -297,6 +297,8 @@ class CompetitionRegistrationTests(TestCase):
             reverse("competitions:detail", kwargs={"pk": self.competition.pk})
         )
 
-        self.assertContains(response, "inclui estimativas")
+        self.assertContains(response, "indica que o número de questões é uma estimativa")
+        self.assertContains(response, 'aria-label="Estimativa"', count=1)
+        self.assertContains(response, 'aria-label="O total inclui estimativas"', count=1)
         self.assertEqual(response.context["total_questions"], 30)
         self.assertEqual(response.context["total_max_score"], Decimal("57"))
