@@ -37,6 +37,13 @@ class QuestionRecord(models.Model):
         blank=True,
         editable=False,
     )
+    code = models.CharField(
+        "código",
+        max_length=20,
+        unique=True,
+        editable=False,
+        blank=True,
+    )
     answered_date = models.DateField("data")
     board = models.CharField("banca", max_length=120, blank=True)
     exam_context = models.CharField(
@@ -82,6 +89,17 @@ class QuestionRecord(models.Model):
         verbose_name = "questão respondida"
         verbose_name_plural = "questões respondidas"
 
+    @classmethod
+    def next_code(cls):
+        highest = 0
+        for code in cls.objects.exclude(code="").values_list("code", flat=True):
+            if not code or not code.startswith("Q"):
+                continue
+            numeric = code[1:]
+            if numeric.isdigit():
+                highest = max(highest, int(numeric))
+        return f"Q{highest + 1:04d}"
+
     @property
     def competition(self):
         return self.competition_discipline.competition
@@ -89,6 +107,11 @@ class QuestionRecord(models.Model):
     @property
     def is_gran_url(self):
         return "grancursosonline.com.br" in (self.question_url or "")
+
+    def save(self, *args, **kwargs):
+        if not self.code:
+            self.code = self.next_code()
+        super().save(*args, **kwargs)
 
     def clean(self):
         super().clean()
@@ -123,4 +146,4 @@ class QuestionRecord(models.Model):
             )
 
     def __str__(self):
-        return f"{self.question_number} — {self.competition_discipline.discipline.name}"
+        return f"{self.code} — {self.competition_discipline.discipline.name}"
