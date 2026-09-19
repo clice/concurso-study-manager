@@ -264,7 +264,7 @@ def competition_dashboard(request, pk):
         for row in (
             syllabus_qs.values("competition_discipline_id")
             .annotate(
-                total=Count("id"),
+                total=Count("id", distinct=True),
                 covered=Count(
                     "id",
                     filter=Q(lessons__isnull=False),
