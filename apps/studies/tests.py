@@ -508,4 +508,7 @@ class CompetitionDashboardTests(TestCase):
         self.assertContains(response, "Progresso por disciplina")
         self.assertContains(response, "Taxa de acerto por disciplina")
         self.assertContains(response, "Aulas por semana sugerida")
+        self.assertContains(response, "Total")
+        self.assertContains(response, "33.3%")
+        self.assertContains(response, "73.3%")
         self.assertContains(response, "competition-dashboard-data")
