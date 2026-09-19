@@ -200,3 +200,14 @@ details > summary::-webkit-details-marker {
         grid-template-columns: 1fr;
     }
 }
+
+
+.form-actions {
+    border-top: 1px solid var(--line);
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+}
+
+.money-input {
+    font-variant-numeric: tabular-nums;
+}
