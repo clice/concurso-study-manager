@@ -706,6 +706,8 @@ class CompetitionNavigationTests(TestCase):
         self.assertContains(response, "Desenvolvimento de sistemas.")
         self.assertContains(response, "Aulas da disciplina")
         self.assertContains(response, "Gerenciar edital")
+        self.assertContains(response, 'priority-pill priority-p1')
+        self.assertContains(response, 'estimate-marker ms-1')
 
     def test_lessons_and_dashboard_have_dedicated_routes(self):
         lessons = self.client.get(
