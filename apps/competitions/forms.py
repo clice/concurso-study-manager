@@ -109,9 +109,7 @@ class CompetitionStageForm(forms.ModelForm):
     class Meta:
         model = CompetitionStage
         fields = [
-            "name",
             "stage_type",
-            "position",
             "scheduled_date",
             "scheduled_time",
             "eliminatory",
@@ -124,6 +122,9 @@ class CompetitionStageForm(forms.ModelForm):
             "scheduled_date": DateInput(),
             "scheduled_time": TimeInput(),
             "details": forms.Textarea(attrs={"rows": 3}),
+        }
+        labels = {
+            "stage_type": "Etapa",
         }
 
     def __init__(self, *args, **kwargs):
@@ -147,34 +148,24 @@ class CompetitionDisciplineForm(forms.ModelForm):
     class Meta:
         model = CompetitionDiscipline
         fields = [
-            "stage",
             "discipline_name",
             "knowledge_area",
             "priority",
             "expected_questions",
             "weight",
             "max_score",
-            "position",
+            "minimum_score",
         ]
 
     def __init__(self, *args, competition=None, **kwargs):
         self.competition = competition
         super().__init__(*args, **kwargs)
-        self.fields["stage"].queryset = CompetitionStage.objects.none()
-        if competition:
-            self.fields["stage"].queryset = competition.stages.order_by("position")
         for name, field in self.fields.items():
-            if name in {"stage", "knowledge_area", "priority"}:
+            if name in {"knowledge_area", "priority"}:
                 field.widget.attrs["class"] = "form-select"
             else:
                 field.widget.attrs.setdefault("class", "form-control")
         self.fields["discipline_name"].widget.attrs["list"] = "discipline-options"
-
-    def clean_stage(self):
-        stage = self.cleaned_data["stage"]
-        if self.competition and stage.competition_id != self.competition.id:
-            raise forms.ValidationError("A etapa escolhida não pertence a este concurso.")
-        return stage
 
     def clean_discipline_name(self):
         name = " ".join(self.cleaned_data["discipline_name"].split())
