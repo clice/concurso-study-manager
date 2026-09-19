@@ -9,7 +9,7 @@
         <h1 class="h2 mb-1">Editar item{% if item.item_code %} {{ item.item_code }}{% endif %}</h1>
         <p class="text-body-secondary mb-0">{{ link.discipline.name }} · {{ competition.name }}</p>
     </div>
-    <a class="btn btn-outline-secondary" href="{% url 'competitions:detail' competition.pk %}#edital-{{ link.pk }}">Voltar</a>
+    <a class="btn btn-outline-secondary" href="{% url 'competitions:detail' competition.pk %}?edital={{ link.pk }}#edital-{{ link.pk }}">Voltar</a>
 </div>
 
 <form method="post" class="form-card">
@@ -19,9 +19,9 @@
     {% endif %}
 
     <div class="row g-3">
+        <div class="col-12 col-md-5">{% include "competitions/field.html" with field=form.parent %}</div>
         <div class="col-12 col-md-3">{% include "competitions/field.html" with field=form.item_code %}</div>
-        <div class="col-12 col-md-3">{% include "competitions/field.html" with field=form.priority %}</div>
-        <div class="col-12 col-md-6">{% include "competitions/field.html" with field=form.parent %}</div>
+        <div class="col-12 col-md-4">{% include "competitions/field.html" with field=form.priority %}</div>
         <div class="col-12">{% include "competitions/field.html" with field=form.content %}</div>
     </div>
 
