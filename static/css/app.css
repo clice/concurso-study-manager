@@ -825,3 +825,145 @@ details > summary::-webkit-details-marker {
     border-top: 1px solid var(--line);
     margin: .28rem 0;
 }
+
+
+.dashboard-kpis {
+    display: grid;
+    gap: .8rem;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.dashboard-kpi {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: .9rem;
+    padding: 1rem 1.05rem;
+}
+
+.dashboard-kpi > span {
+    color: var(--muted);
+    display: block;
+    font-size: .75rem;
+    margin-bottom: .35rem;
+}
+
+.dashboard-kpi > strong {
+    color: var(--ink);
+    display: block;
+    font-size: 1.45rem;
+    line-height: 1.1;
+}
+
+.dashboard-kpi > small {
+    color: var(--muted);
+    display: block;
+    font-size: .72rem;
+    margin-top: .4rem;
+}
+
+.dashboard-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.dashboard-chart-card {
+    min-width: 0;
+}
+
+.dashboard-chart-wide {
+    grid-column: 1 / -1;
+}
+
+.dashboard-chart-heading {
+    margin-bottom: .8rem;
+}
+
+.dashboard-chart {
+    min-height: 280px;
+    position: relative;
+}
+
+.dashboard-chart-tall {
+    min-height: 360px;
+}
+
+.dashboard-chart-donut {
+    margin-inline: auto;
+    max-width: 440px;
+}
+
+.dashboard-chart-weekly {
+    min-height: 320px;
+}
+
+.dashboard-summary-table th {
+    color: var(--muted);
+    font-size: .72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.dashboard-summary-table td {
+    font-size: .84rem;
+    vertical-align: middle;
+}
+
+.dashboard-discipline-meta {
+    color: var(--muted);
+    display: block;
+    font-size: .7rem;
+    margin-top: .2rem;
+}
+
+.dashboard-discipline-meta .priority-pill {
+    font-size: .62rem;
+    padding: .15rem .38rem;
+}
+
+.dashboard-progress-cell {
+    align-items: center;
+    display: grid;
+    gap: .5rem;
+    grid-template-columns: minmax(70px, 1fr) auto;
+    min-width: 125px;
+}
+
+.dashboard-progress-track {
+    background: #e2e8f0;
+    border-radius: 999px;
+    height: .45rem;
+    overflow: hidden;
+}
+
+.dashboard-progress-track span {
+    background: #2563eb;
+    border-radius: inherit;
+    display: block;
+    height: 100%;
+}
+
+@media (max-width: 992px) {
+    .dashboard-kpis {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .dashboard-chart-wide {
+        grid-column: auto;
+    }
+}
+
+@media (max-width: 576px) {
+    .dashboard-kpis {
+        grid-template-columns: 1fr;
+    }
+
+    .dashboard-chart-tall {
+        min-height: 430px;
+    }
+}
