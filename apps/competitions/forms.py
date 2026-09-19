@@ -218,10 +218,10 @@ class SyllabusItemForm(forms.ModelForm):
     class Meta:
         model = SyllabusItem
         fields = [
+            "parent",
             "item_code",
             "content",
             "priority",
-            "parent",
         ]
         widgets = {
             "content": forms.Textarea(
@@ -232,8 +232,16 @@ class SyllabusItemForm(forms.ModelForm):
             ),
         }
         labels = {
-            "item_code": "Item / código",
             "parent": "Item-pai (opcional)",
+            "item_code": "Item / código (opcional)",
+            "priority": "Prioridade (opcional)",
+        }
+        help_texts = {
+            "item_code": (
+                "Deixe vazio para gerar automaticamente. "
+                "Preencha apenas se o edital usar uma numeração diferente."
+            ),
+            "priority": "Se ficar em branco, herda a prioridade da disciplina.",
         }
 
     def __init__(self, *args, discipline_link=None, **kwargs):
@@ -246,11 +254,12 @@ class SyllabusItemForm(forms.ModelForm):
             if self.instance and self.instance.pk:
                 parent_queryset = parent_queryset.exclude(pk=self.instance.pk)
             self.fields["parent"].queryset = parent_queryset
-            self.fields["priority"].initial = (
-                self.instance.priority
-                if self.instance and self.instance.pk
-                else discipline_link.priority
-            )
+
+            inherited_label = f"Herdar da disciplina ({discipline_link.priority})"
+            self.fields["priority"].choices = [
+                ("", inherited_label),
+                *CompetitionDiscipline.Priority.choices,
+            ]
 
         for name, field in self.fields.items():
             if name in {"priority", "parent"}:
@@ -276,6 +285,9 @@ class SyllabusItemForm(forms.ModelForm):
                     ancestor = ancestor.parent
 
         return parent
+
+    def clean_priority(self):
+        return self.cleaned_data.get("priority") or None
 
     def save(self, commit=True):
         instance = super().save(commit=False)
