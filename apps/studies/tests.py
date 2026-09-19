@@ -238,6 +238,28 @@ class LessonTests(TestCase):
         self.assertContains(response, "<th>%</th>", html=True)
         self.assertNotContains(response, "Edital:")
 
+    def test_lesson_actions_show_material_links_and_edit(self):
+        lesson = Lesson.objects.create(
+            competition_discipline=self.systems_link,
+            title="JUnit",
+            video_url="https://example.com/video",
+            transcript_url="https://example.com/transcript",
+            handout_url="",
+        )
+
+        response = self.client.get(
+            reverse("studies:lesson_list", kwargs={"pk": self.competition.pk})
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Ações")
+        self.assertContains(response, "Videoaula ↗")
+        self.assertContains(response, "Degravação ↗")
+        self.assertContains(response, "Apostila —")
+        self.assertContains(response, "Editar aula")
+        self.assertContains(response, 'href="https://example.com/video"')
+        self.assertContains(response, 'href="https://example.com/transcript"')
+
     def test_lesson_can_be_edited_without_changing_discipline_or_code(self):
         lesson = Lesson.objects.create(
             competition_discipline=self.systems_link,
