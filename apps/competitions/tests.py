@@ -64,13 +64,24 @@ class CompetitionRegistrationTests(TestCase):
         self.assertEqual(competition.registration_end, date(2026, 8, 6))
         self.assertEqual(competition.board, self.fgv)
 
-    def test_stage_can_be_added(self):
+    def test_stages_receive_positions_automatically(self):
+        first = CompetitionStage.objects.create(
+            competition=self.competition,
+            stage_type=CompetitionStage.StageType.OBJECTIVE,
+        )
+        second = CompetitionStage.objects.create(
+            competition=self.competition,
+            stage_type=CompetitionStage.StageType.ESSAY,
+        )
+
+        self.assertEqual(first.position, 1)
+        self.assertEqual(second.position, 2)
+
+    def test_stage_can_be_added_without_name_or_manual_position(self):
         response = self.client.post(
             reverse("competitions:stage_add", kwargs={"pk": self.competition.pk}),
             {
-                "name": "Prova objetiva",
                 "stage_type": CompetitionStage.StageType.OBJECTIVE,
-                "position": 1,
                 "scheduled_date": "2026-10-11",
                 "scheduled_time": "13:00",
                 "eliminatory": "on",
@@ -81,56 +92,59 @@ class CompetitionRegistrationTests(TestCase):
             },
         )
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(self.competition.stages.count(), 1)
+
+        stage = self.competition.stages.get()
+        self.assertEqual(stage.position, 1)
+        self.assertEqual(stage.get_stage_type_display(), "Prova objetiva")
+
+    def test_heteroidentification_and_biopsychosocial_are_available_stage_types(self):
+        available = dict(CompetitionStage.StageType.choices)
+        self.assertEqual(
+            available[CompetitionStage.StageType.HETEROIDENTIFICATION],
+            "Heteroidentificação",
+        )
+        self.assertEqual(
+            available[CompetitionStage.StageType.BIOPSYCHOSOCIAL],
+            "Avaliação biopsicossocial",
+        )
 
     def test_existing_discipline_is_reused_between_competitions(self):
-        stage = CompetitionStage.objects.create(
-            competition=self.competition,
-            name="Prova objetiva",
-            stage_type=CompetitionStage.StageType.OBJECTIVE,
-            position=1,
-        )
         Discipline.objects.create(name="Língua Portuguesa")
 
         response = self.client.post(
             reverse("competitions:discipline_add", kwargs={"pk": self.competition.pk}),
             {
-                "stage": stage.pk,
                 "discipline_name": "língua portuguesa",
                 "knowledge_area": CompetitionDiscipline.KnowledgeArea.GENERAL,
                 "priority": CompetitionDiscipline.Priority.P1,
                 "expected_questions": 12,
                 "weight": "1.00",
                 "max_score": "12.00",
-                "position": 1,
+                "minimum_score": "1.00",
             },
         )
 
         self.assertEqual(response.status_code, 302)
         self.assertEqual(Discipline.objects.count(), 1)
+
         link = CompetitionDiscipline.objects.get()
         self.assertEqual(link.discipline.name, "Língua Portuguesa")
         self.assertEqual(link.competition, self.competition)
-        self.assertEqual(link.stage, stage)
+        self.assertEqual(link.position, 1)
+        self.assertEqual(link.minimum_score, Decimal("1.00"))
 
     def test_detail_page_displays_stages_and_disciplines(self):
-        stage = CompetitionStage.objects.create(
+        CompetitionStage.objects.create(
             competition=self.competition,
-            name="Prova objetiva",
             stage_type=CompetitionStage.StageType.OBJECTIVE,
-            position=1,
         )
         discipline = Discipline.objects.create(name="Banco de Dados")
         CompetitionDiscipline.objects.create(
             competition=self.competition,
-            stage=stage,
             discipline=discipline,
             knowledge_area=CompetitionDiscipline.KnowledgeArea.SPECIFIC,
             priority=CompetitionDiscipline.Priority.P1,
-            expected_questions=3,
             weight=2.5,
-            max_score=7.5,
-            position=1,
         )
 
         response = self.client.get(
@@ -141,3 +155,53 @@ class CompetitionRegistrationTests(TestCase):
         self.assertContains(response, "Prova objetiva")
         self.assertContains(response, "Banco de Dados")
         self.assertContains(response, "FGV")
+        self.assertNotContains(response, "<th>Etapa</th>", html=False)
+        self.assertNotContains(response, "<th>Posição</th>", html=False)
+
+    def test_stage_order_can_be_rearranged(self):
+        objective = CompetitionStage.objects.create(
+            competition=self.competition,
+            stage_type=CompetitionStage.StageType.OBJECTIVE,
+        )
+        essay = CompetitionStage.objects.create(
+            competition=self.competition,
+            stage_type=CompetitionStage.StageType.ESSAY,
+        )
+
+        response = self.client.post(
+            reverse("competitions:stage_reorder", kwargs={"pk": self.competition.pk}),
+            data=f'{{"order":[{essay.id},{objective.id}]}}',
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        objective.refresh_from_db()
+        essay.refresh_from_db()
+        self.assertEqual(essay.position, 1)
+        self.assertEqual(objective.position, 2)
+
+    def test_discipline_order_can_be_rearranged(self):
+        portuguese = Discipline.objects.create(name="Língua Portuguesa")
+        english = Discipline.objects.create(name="Língua Inglesa")
+        first = CompetitionDiscipline.objects.create(
+            competition=self.competition,
+            discipline=portuguese,
+            knowledge_area=CompetitionDiscipline.KnowledgeArea.GENERAL,
+        )
+        second = CompetitionDiscipline.objects.create(
+            competition=self.competition,
+            discipline=english,
+            knowledge_area=CompetitionDiscipline.KnowledgeArea.GENERAL,
+        )
+
+        response = self.client.post(
+            reverse("competitions:discipline_reorder", kwargs={"pk": self.competition.pk}),
+            data=f'{{"order":[{second.id},{first.id}]}}',
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        first.refresh_from_db()
+        second.refresh_from_db()
+        self.assertEqual(second.position, 1)
+        self.assertEqual(first.position, 2)
