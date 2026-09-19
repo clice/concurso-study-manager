@@ -134,12 +134,13 @@ function positionLessonActionPopover(popover) {
         Math.min(top, window.innerHeight - popoverRect.height - viewportPadding)
     );
 
-    let left = buttonRect.right - popoverRect.width;
+    let left = buttonRect.left + (buttonRect.width - popoverRect.width) / 2;
     left = Math.max(
         viewportPadding,
         Math.min(left, window.innerWidth - popoverRect.width - viewportPadding)
     );
 
+    popover.dataset.placement = openAbove ? "top" : "bottom";
     popover.style.left = `${left}px`;
     popover.style.top = `${top}px`;
 }
