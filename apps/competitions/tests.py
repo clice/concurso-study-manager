@@ -118,6 +118,7 @@ class CompetitionRegistrationTests(TestCase):
                 "knowledge_area": CompetitionDiscipline.KnowledgeArea.GENERAL,
                 "priority": CompetitionDiscipline.Priority.P1,
                 "expected_questions": 12,
+                "question_count_kind": CompetitionDiscipline.QuestionCountKind.OFFICIAL,
                 "weight": "1.00",
                 "max_score": "12.00",
                 "minimum_score": "1.00",
