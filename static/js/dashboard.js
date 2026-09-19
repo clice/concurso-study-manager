@@ -1,22 +1,15 @@
-function wrapDashboardLabel(label, maxLength = 24) {
+function compactDashboardLabel(label, maxLength = 30) {
     if (!label || label.length <= maxLength) return label;
+    return `${label.slice(0, maxLength - 1).trimEnd()}…`;
+}
 
-    const words = label.split(" ");
-    const lines = [];
-    let current = "";
-
-    words.forEach((word) => {
-        const candidate = current ? `${current} ${word}` : word;
-        if (candidate.length > maxLength && current) {
-            lines.push(current);
-            current = word;
-        } else {
-            current = candidate;
-        }
-    });
-
-    if (current) lines.push(current);
-    return lines;
+function fullDisciplineTooltip(data) {
+    return {
+        title(items) {
+            if (!items.length) return "";
+            return data.disciplines[items[0].dataIndex];
+        },
+    };
 }
 
 function dashboardBaseOptions() {
@@ -65,7 +58,7 @@ function enableCompetitionDashboard() {
     if (!dataElement || typeof Chart === "undefined") return;
 
     const data = JSON.parse(dataElement.textContent);
-    const labels = data.disciplines.map((label) => wrapDashboardLabel(label));
+    const labels = data.disciplines.map((label) => compactDashboardLabel(label));
 
     const progressCanvas = document.getElementById("lesson-progress-chart");
     if (progressCanvas) {
@@ -105,6 +98,7 @@ function enableCompetitionDashboard() {
                     },
                     tooltip: {
                         callbacks: {
+                            ...fullDisciplineTooltip(data),
                             label(context) {
                                 return `${context.raw}% concluído`;
                             },
@@ -193,6 +187,7 @@ function enableCompetitionDashboard() {
                     },
                     tooltip: {
                         callbacks: {
+                            ...fullDisciplineTooltip(data),
                             label(context) {
                                 if (context.raw === null) return "Sem questões";
                                 return `${context.raw}% de acerto`;
@@ -242,8 +237,9 @@ function enableCompetitionDashboard() {
                     },
                     tooltip: {
                         callbacks: {
+                            ...fullDisciplineTooltip(data),
                             label(context) {
-                                return `${context.raw}% coberto`;
+                                return `${context.raw}% mapeado`;
                             },
                         },
                     },
