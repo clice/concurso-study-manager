@@ -1,3 +1,4 @@
+from django.core.paginator import Paginator
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -94,31 +95,39 @@ def question_list(request, pk):
             | Q(observation__icontains=query)
         )
 
-    questions = list(questions)
+    metrics = questions.aggregate(
+        total=Count("id"),
+        correct=Count(
+            "id",
+            filter=Q(result=QuestionRecord.Result.CORRECT),
+        ),
+        incorrect=Count(
+            "id",
+            filter=Q(result=QuestionRecord.Result.INCORRECT),
+        ),
+        not_counted=Count(
+            "id",
+            filter=Q(result=QuestionRecord.Result.NOT_COUNTED),
+        ),
+        pending_reviews=Count(
+            "id",
+            filter=Q(review_required=True)
+            & ~Q(review_status=QuestionRecord.ReviewStatus.COMPLETED),
+        ),
+    )
 
-    valid_questions = [
-        item
-        for item in questions
-        if item.result != QuestionRecord.Result.NOT_COUNTED
-    ]
-    correct_count = sum(
-        item.result == QuestionRecord.Result.CORRECT
-        for item in valid_questions
-    )
-    incorrect_count = sum(
-        item.result == QuestionRecord.Result.INCORRECT
-        for item in valid_questions
-    )
+    correct_count = metrics["correct"] or 0
+    incorrect_count = metrics["incorrect"] or 0
+    valid_total = correct_count + incorrect_count
     accuracy = (
-        round((correct_count / len(valid_questions)) * 100, 1)
-        if valid_questions
+        round((correct_count / valid_total) * 100, 1)
+        if valid_total
         else None
     )
-    pending_reviews = sum(
-        item.review_required
-        and item.review_status != QuestionRecord.ReviewStatus.COMPLETED
-        for item in questions
-    )
+    pending_reviews = metrics["pending_reviews"] or 0
+
+    paginator = Paginator(questions, 50)
+    page_obj = paginator.get_page(request.GET.get("pagina"))
 
     boards = list(
         QuestionRecord.objects.filter(
@@ -136,7 +145,8 @@ def question_list(request, pk):
         {
             "competition": competition,
             "active_tab": "questions",
-            "questions": questions,
+            "questions": page_obj.object_list,
+            "page_obj": page_obj,
             "discipline_links": discipline_links,
             "selected_discipline_link": selected_discipline_link,
             "lessons": lessons,
@@ -151,7 +161,8 @@ def question_list(request, pk):
                 "date": date_value,
                 "q": query,
             },
-            "filtered_total": len(questions),
+            "filtered_total": metrics["total"] or 0,
+            "not_counted_count": metrics["not_counted"] or 0,
             "correct_count": correct_count,
             "incorrect_count": incorrect_count,
             "accuracy": accuracy,
