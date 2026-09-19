@@ -27,7 +27,11 @@
         <div>
             <p class="eyebrow mb-1">TODOS OS CONCURSOS</p>
             <h2 class="h4 mb-1">Histórico de questões</h2>
-            <p class="text-body-secondary small mb-0">Use os filtros para comparar períodos, concursos, disciplinas e bancas.</p>
+            <p class="text-body-secondary small mb-0">Lista compacta. Clique no código da questão para abrir o registro completo.</p>
+        </div>
+        <div class="question-list-meta">
+            <strong>{{ page_size }}</strong>
+            <span>por página</span>
         </div>
     </div>
 
@@ -88,7 +92,7 @@
         </div>
         <div class="global-question-search">
             <label class="form-label small" for="global-q">Buscar</label>
-            <input class="form-control" id="global-q" type="search" name="q" value="{{ filters.q }}" placeholder="Questão, prova, tema, fonte...">
+            <input class="form-control" id="global-q" type="search" name="q" value="{{ filters.q }}" placeholder="Código, questão, prova, tema, fonte...">
         </div>
         <div class="question-filter-actions">
             <button class="btn btn-primary" type="submit">Filtrar</button>
@@ -98,14 +102,14 @@
 
     {% if questions %}
         <div class="table-responsive">
-            <table class="table align-middle question-table mb-0">
+            <table class="table align-middle question-table question-table-compact question-table-global mb-0">
                 <thead>
                     <tr>
                         <th>Data</th>
-                        <th>Concurso</th>
-                        <th>Disciplina</th>
                         <th>Questão</th>
-                        <th>Banca / prova</th>
+                        <th>Concurso</th>
+                        <th>Disciplina / tema</th>
+                        <th>Banca</th>
                         <th>Aula</th>
                         <th>Resultado</th>
                         <th>Revisão</th>
@@ -117,23 +121,25 @@
                         <tr>
                             <td>{{ item.answered_date|date:"d/m/Y" }}</td>
                             <td>
+                                <a class="question-code-link" href="{% url 'questions:question_detail' item.competition.pk item.pk %}">
+                                    {{ item.code }}
+                                </a>
+                            </td>
+                            <td>
                                 <a class="table-link" href="{% url 'questions:question_list' item.competition.pk %}">
                                     {{ item.competition.name }}
                                 </a>
                             </td>
-                            <td>{{ item.competition_discipline.discipline.name }}</td>
-                            <td>
-                                <strong>{{ item.question_number }}</strong>
-                                <span class="question-secondary">{{ item.topic_subtopic|default:"" }}</span>
+                            <td class="question-discipline-topic-cell">
+                                <strong class="question-discipline-link">{{ item.competition_discipline.discipline.name }}</strong>
+                                <span class="question-secondary question-topic-preview">{{ item.topic_subtopic|default:"Sem tema/subtema registrado" }}</span>
                             </td>
-                            <td>
-                                {% if item.board %}<strong>{{ item.board }}</strong>{% endif %}
-                                <span class="question-secondary">{{ item.exam_context|default:"" }}</span>
-                            </td>
+                            <td>{% if item.board %}<strong>{{ item.board }}</strong>{% else %}—{% endif %}</td>
                             <td>
                                 {% if item.lesson %}
-                                    <span>{{ item.lesson.code }}</span>
-                                    <span class="question-secondary">{{ item.lesson.title }}</span>
+                                    <a class="question-lesson-link" href="{% url 'studies:lesson_list' item.competition.pk %}?disciplina={{ item.competition_discipline.pk }}&q={{ item.lesson.code }}">
+                                        {{ item.lesson.code }}
+                                    </a>
                                 {% else %}—{% endif %}
                             </td>
                             <td><span class="question-result question-result-{{ item.result }}">{{ item.get_result_display }}</span></td>
@@ -159,8 +165,12 @@
             </table>
         </div>
 
+        <div class="question-pagination-summary mt-3">
+            Mostrando {{ page_obj.start_index }}–{{ page_obj.end_index }} de {{ page_obj.paginator.count }} questão{{ page_obj.paginator.count|pluralize:"ões" }}.
+        </div>
+
         {% if page_obj.paginator.num_pages > 1 %}
-            <nav class="question-pagination mt-4" aria-label="Paginação das questões">
+            <nav class="question-pagination mt-3" aria-label="Paginação das questões">
                 {% if page_obj.has_previous %}
                     <a class="btn btn-sm btn-outline-secondary" href="?pagina={{ page_obj.previous_page_number }}&concurso={{ filters.competition }}&disciplina={{ filters.discipline }}&resultado={{ filters.result }}&revisao={{ filters.review }}&banca={{ filters.board|urlencode }}&inicio={{ filters.start }}&fim={{ filters.end }}&q={{ filters.q|urlencode }}">Anterior</a>
                 {% endif %}
