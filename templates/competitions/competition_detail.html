@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load competition_format %}
 
 {% block title %}{{ competition.name }} | Concurso Study Manager{% endblock %}
 
@@ -7,7 +8,7 @@
     <div>
         <div class="d-flex align-items-center gap-2 mb-2">
             <span class="badge text-bg-light border">{{ competition.get_status_display }}</span>
-            {% if competition.board %}<span class="small text-body-secondary">{{ competition.board }}</span>{% endif %}
+            {% if competition.board %}<span class="small text-body-secondary">{{ competition.board.acronym }}</span>{% endif %}
         </div>
         <h1 class="h2 mb-1">{{ competition.name }}</h1>
         <p class="text-body-secondary mb-0">{{ competition.organization }} · {{ competition.role }}</p>
@@ -16,12 +17,21 @@
 </div>
 
 <div class="summary-grid mb-4">
-    <div class="summary-item"><span>Edital</span><strong>{{ competition.notice_number|default:"—" }}</strong></div>
-    <div class="summary-item"><span>Prova principal</span><strong>{% if competition.exam_date %}{{ competition.exam_date|date:"d/m/Y" }}{% else %}—{% endif %}</strong></div>
+    <div class="summary-item"><span>Banca</span><strong>{% if competition.board %}{{ competition.board.acronym }}{% else %}—{% endif %}</strong></div>
+    <div class="summary-item"><span>Prova</span><strong>{% if competition.exam_date %}{{ competition.exam_date|date:"d/m/Y" }}{% else %}—{% endif %}</strong></div>
     <div class="summary-item"><span>Localidade</span><strong>{{ competition.location|default:"—" }}</strong></div>
-    <div class="summary-item"><span>Validade</span><strong>{{ competition.validity|default:"—" }}</strong></div>
-    <div class="summary-item"><span>Salário inicial</span><strong>{% if competition.initial_salary %}R$ {{ competition.initial_salary }}{% else %}—{% endif %}</strong></div>
-    <div class="summary-item"><span>Taxa</span><strong>{% if competition.fee %}R$ {{ competition.fee }}{% else %}—{% endif %}</strong></div>
+    <div class="summary-item"><span>Salário inicial</span><strong>{{ competition.initial_salary|brl }}</strong></div>
+    <div class="summary-item"><span>Taxa de inscrição</span><strong>{{ competition.fee|brl }}</strong></div>
+    <div class="summary-item">
+        <span>Inscrições</span>
+        <strong>
+            {% if competition.registration_start or competition.registration_end %}
+                {{ competition.registration_start|date:"d/m/Y"|default:"—" }} → {{ competition.registration_end|date:"d/m/Y"|default:"—" }}
+            {% else %}
+                —
+            {% endif %}
+        </strong>
+    </div>
 </div>
 
 <section class="content-card mb-4" id="etapas">
