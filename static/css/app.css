@@ -761,35 +761,24 @@ details > summary::-webkit-details-marker {
 
 
 .lesson-actions-cell {
-    min-width: 126px;
+    min-width: 94px;
     text-align: right;
     vertical-align: top !important;
 }
 
-.lesson-actions {
-    margin-left: auto;
-    width: fit-content;
-}
-
-.lesson-actions > summary {
-    cursor: pointer;
-    user-select: none;
-}
-
-.lesson-actions[open] > summary {
-    background: #f8fafc;
-}
-
-.lesson-actions-panel {
-    background: #f8fafc;
+.lesson-actions-popover {
+    background: #fff;
     border: 1px solid var(--line);
-    border-radius: .65rem;
-    display: grid;
-    gap: .22rem;
-    margin-top: .4rem;
-    min-width: 150px;
-    padding: .5rem;
-    text-align: left;
+    border-radius: .75rem;
+    box-shadow: 0 14px 32px rgba(31, 41, 55, .16);
+    inset: auto;
+    margin: 0;
+    min-width: 170px;
+    padding: .55rem;
+}
+
+.lesson-actions-popover::backdrop {
+    background: transparent;
 }
 
 .lesson-actions-heading {
@@ -797,7 +786,7 @@ details > summary::-webkit-details-marker {
     font-size: .67rem;
     font-weight: 800;
     letter-spacing: .08em;
-    padding: .15rem .35rem .25rem;
+    padding: .15rem .35rem .3rem;
     text-transform: uppercase;
 }
 
@@ -806,8 +795,8 @@ details > summary::-webkit-details-marker {
 .lesson-action-unavailable {
     border-radius: .45rem;
     display: block;
-    font-size: .78rem;
-    padding: .38rem .45rem;
+    font-size: .8rem;
+    padding: .42rem .5rem;
     text-decoration: none;
     white-space: nowrap;
 }
@@ -829,5 +818,5 @@ details > summary::-webkit-details-marker {
 
 .lesson-actions-divider {
     border-top: 1px solid var(--line);
-    margin: .25rem 0;
+    margin: .28rem 0;
 }
