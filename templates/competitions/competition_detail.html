@@ -289,7 +289,10 @@
                                                 </td>
                                                 <td>{{ item.content }}</td>
                                                 <td>
-                                                    <span class="priority-pill priority-{{ item.priority|lower }}">{{ item.priority }}</span>
+                                                    <span
+    class="priority-pill priority-{{ item.effective_priority|lower }}"
+    {% if item.inherits_priority %}title="Prioridade herdada da disciplina"{% endif %}
+>{{ item.effective_priority }}</span>
                                                 </td>
                                                 <td class="text-end">
                                                     <a
@@ -320,14 +323,14 @@
                             >
                                 {% csrf_token %}
                                 <div class="row g-3">
+                                    <div class="col-12 col-md-5">
+                                        {% include "competitions/field.html" with field=block.form.parent %}
+                                    </div>
                                     <div class="col-12 col-md-3">
                                         {% include "competitions/field.html" with field=block.form.item_code %}
                                     </div>
-                                    <div class="col-12 col-md-3">
+                                    <div class="col-12 col-md-4">
                                         {% include "competitions/field.html" with field=block.form.priority %}
-                                    </div>
-                                    <div class="col-12 col-md-6">
-                                        {% include "competitions/field.html" with field=block.form.parent %}
                                     </div>
                                     <div class="col-12">
                                         {% include "competitions/field.html" with field=block.form.content %}
