@@ -1,44 +1,54 @@
 from datetime import date
+from decimal import Decimal
 
 from django.test import TestCase
 from django.urls import reverse
 
-from .models import Competition, CompetitionDiscipline, CompetitionStage, Discipline
+from .models import (
+    Competition,
+    CompetitionDiscipline,
+    CompetitionStage,
+    Discipline,
+    ExamBoard,
+)
 
 
 class CompetitionRegistrationTests(TestCase):
     def setUp(self):
+        self.fgv, _ = ExamBoard.objects.get_or_create(
+            acronym="FGV",
+            defaults={"name": "Fundação Getulio Vargas"},
+        )
         self.competition = Competition.objects.create(
             name="DATAPREV 2026",
             organization="DATAPREV",
             role="ATI — Desenvolvimento de Software",
-            board="FGV",
+            board=self.fgv,
             exam_date=date(2026, 10, 11),
             status=Competition.Status.ACTIVE,
         )
 
-    def test_create_page_loads(self):
+    def test_create_page_loads_with_board_select(self):
         response = self.client.get(reverse("competitions:create"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Novo concurso")
+        self.assertContains(response, "FGV")
 
-    def test_competition_can_be_created(self):
+    def test_competition_can_be_created_with_brazilian_currency(self):
         response = self.client.post(
             reverse("competitions:create"),
             {
                 "name": "Concurso Exemplo",
                 "organization": "Órgão Exemplo",
                 "role": "Analista",
-                "notice_number": "01/2026",
-                "board": "FGV",
-                "initial_salary": "10000.00",
+                "board": self.fgv.pk,
+                "initial_salary": "R$ 10.685,44",
                 "benefits": "Benefício exemplo",
-                "fee": "100.00",
-                "registration_start": "",
-                "registration_end": "",
+                "fee": "R$ 110,00",
+                "registration_start": "2026-07-06",
+                "registration_end": "2026-08-06",
                 "exam_date": "2026-12-01",
                 "exam_time": "13:00",
-                "validity": "2 anos",
                 "location": "Ceará",
                 "official_url": "https://example.com/",
                 "status": Competition.Status.PLANNED,
@@ -46,7 +56,13 @@ class CompetitionRegistrationTests(TestCase):
             },
         )
         self.assertEqual(response.status_code, 302)
-        self.assertTrue(Competition.objects.filter(name="Concurso Exemplo").exists())
+
+        competition = Competition.objects.get(name="Concurso Exemplo")
+        self.assertEqual(competition.initial_salary, Decimal("10685.44"))
+        self.assertEqual(competition.fee, Decimal("110.00"))
+        self.assertEqual(competition.registration_start, date(2026, 7, 6))
+        self.assertEqual(competition.registration_end, date(2026, 8, 6))
+        self.assertEqual(competition.board, self.fgv)
 
     def test_stage_can_be_added(self):
         response = self.client.post(
@@ -124,3 +140,4 @@ class CompetitionRegistrationTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Prova objetiva")
         self.assertContains(response, "Banco de Dados")
+        self.assertContains(response, "FGV")
