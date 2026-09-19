@@ -79,6 +79,23 @@ class QuestionRecordTests(TestCase):
         payload.update(overrides)
         return payload
 
+    def test_question_gets_automatic_display_code(self):
+        first = QuestionRecord.objects.create(
+            competition_discipline=self.systems_link,
+            answered_date=date(2026, 9, 1),
+            question_number="Q1",
+            result=QuestionRecord.Result.CORRECT,
+        )
+        second = QuestionRecord.objects.create(
+            competition_discipline=self.systems_link,
+            answered_date=date(2026, 9, 2),
+            question_number="Q2",
+            result=QuestionRecord.Result.INCORRECT,
+        )
+
+        self.assertEqual(first.code, "Q0001")
+        self.assertEqual(second.code, "Q0002")
+
     def test_question_can_be_linked_to_specific_lesson_and_gran_url(self):
         response = self.client.post(
             reverse(
@@ -150,8 +167,8 @@ class QuestionRecordTests(TestCase):
         self.assertFalse(form.is_valid())
         self.assertIn("question_url", form.errors)
 
-    def test_question_list_shows_gran_link_and_filters(self):
-        QuestionRecord.objects.create(
+    def test_question_list_is_compact_and_links_to_detail(self):
+        question = QuestionRecord.objects.create(
             competition_discipline=self.systems_link,
             lesson=self.junit,
             answered_date=date(2026, 9, 2),
@@ -164,12 +181,13 @@ class QuestionRecordTests(TestCase):
             result=QuestionRecord.Result.INCORRECT,
             review_required=True,
             review_status=QuestionRecord.ReviewStatus.PENDING,
+            next_review=date(2026, 9, 3),
             question_url=(
                 "https://questoes.grancursosonline.com.br/"
                 "questoes-de-concursos/tecnologia-da-informacao-14/4328362"
             ),
         )
-        QuestionRecord.objects.create(
+        other = QuestionRecord.objects.create(
             competition_discipline=self.portuguese_link,
             answered_date=date(2026, 9, 3),
             board="FCC",
@@ -189,12 +207,32 @@ class QuestionRecordTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Slides Q01 — G588")
+        self.assertContains(response, question.code)
+        self.assertContains(response, "FGV")
+        self.assertContains(response, "JUnit")
+        self.assertContains(response, self.junit.code)
         self.assertContains(response, "Gran ↗")
-        self.assertNotContains(response, "Q02")
+        self.assertContains(response, "50")
+        self.assertNotContains(response, "AL-GO — 2026")
+        self.assertNotContains(response, "03/09/2026")
+        self.assertNotContains(response, other.code)
         self.assertEqual(response.context["filtered_total"], 1)
         self.assertEqual(response.context["incorrect_count"], 1)
         self.assertEqual(response.context["accuracy"], 0.0)
+
+        detail_response = self.client.get(
+            reverse(
+                "questions:question_detail",
+                kwargs={
+                    "pk": self.competition.pk,
+                    "question_id": question.pk,
+                },
+            )
+        )
+        self.assertEqual(detail_response.status_code, 200)
+        self.assertContains(detail_response, "Slides Q01 — G588")
+        self.assertContains(detail_response, "AL-GO — 2026")
+        self.assertContains(detail_response, "03/09/2026")
 
     def test_lesson_can_preselect_question_form(self):
         response = self.client.get(
@@ -233,6 +271,7 @@ class QuestionRecordTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context["questions"]), 50)
+        self.assertEqual(response.context["page_size"], 50)
         self.assertEqual(response.context["page_obj"].paginator.num_pages, 2)
 
 
@@ -306,6 +345,9 @@ class GlobalQuestionViewsTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "DATAPREV 2026")
         self.assertContains(response, "Outro Concurso 2027")
+        self.assertContains(response, "Q0001")
+        self.assertContains(response, "Q0003")
+        self.assertEqual(response.context["page_size"], 50)
         self.assertEqual(response.context["metrics"]["total"], 3)
         self.assertEqual(response.context["metrics"]["correct"], 2)
         self.assertEqual(response.context["metrics"]["incorrect"], 1)
@@ -318,9 +360,9 @@ class GlobalQuestionViewsTests(TestCase):
         )
 
         self.assertEqual(response.context["metrics"]["total"], 2)
-        self.assertContains(response, "Q1")
-        self.assertContains(response, "Q2")
-        self.assertNotContains(response, "Q3")
+        self.assertContains(response, "Q0001")
+        self.assertContains(response, "Q0002")
+        self.assertNotContains(response, "Q0003")
 
     def test_global_dashboard_has_time_and_cross_contest_data(self):
         response = self.client.get(reverse("questions_global:dashboard"))
@@ -417,6 +459,7 @@ class DataprevQuestionImportTests(TestCase):
         self.assertEqual(queryset.exclude(question_url="").count(), 1044)
         self.assertEqual(queryset.filter(url_pending=True).count(), 545)
         self.assertEqual(queryset.filter(review_required=True).count(), 495)
+        self.assertEqual(queryset.exclude(code="").count(), 1618)
 
         linked = queryset.get(
             source_reference="QUESTOES:R1113",
