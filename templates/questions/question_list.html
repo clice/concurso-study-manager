@@ -19,26 +19,11 @@
 {% include "competitions/competition_nav.html" %}
 
 <div class="question-metrics mb-4">
-    <div class="summary-item">
-        <span>Questões exibidas</span>
-        <strong>{{ filtered_total }}</strong>
-    </div>
-    <div class="summary-item">
-        <span>Acertos</span>
-        <strong>{{ correct_count }}</strong>
-    </div>
-    <div class="summary-item">
-        <span>Erros</span>
-        <strong>{{ incorrect_count }}</strong>
-    </div>
-    <div class="summary-item">
-        <span>% de acerto</span>
-        <strong>{% if accuracy is not None %}{{ accuracy|floatformat:"-1" }}%{% else %}—{% endif %}</strong>
-    </div>
-    <div class="summary-item">
-        <span>Revisões pendentes</span>
-        <strong>{{ pending_reviews }}</strong>
-    </div>
+    <div class="summary-item"><span>Questões exibidas</span><strong>{{ filtered_total }}</strong></div>
+    <div class="summary-item"><span>Acertos</span><strong>{{ correct_count }}</strong></div>
+    <div class="summary-item"><span>Erros</span><strong>{{ incorrect_count }}</strong></div>
+    <div class="summary-item"><span>% de acerto</span><strong>{% if accuracy is not None %}{{ accuracy|floatformat:"-1" }}%{% else %}—{% endif %}</strong></div>
+    <div class="summary-item"><span>Revisões pendentes</span><strong>{{ pending_reviews }}</strong></div>
 </div>
 
 <section class="content-card">
@@ -46,7 +31,11 @@
         <div>
             <p class="eyebrow mb-1">REGISTRO</p>
             <h2 class="h4 mb-1">Questões respondidas</h2>
-            <p class="text-body-secondary small mb-0">Somente questões efetivamente respondidas entram neste histórico.</p>
+            <p class="text-body-secondary small mb-0">Lista compacta. Clique no código da questão para ver todos os detalhes.</p>
+        </div>
+        <div class="question-list-meta">
+            <strong>{{ page_size }}</strong>
+            <span>por página</span>
         </div>
     </div>
 
@@ -109,7 +98,7 @@
 
         <div class="question-filter-search">
             <label class="form-label small" for="filter-q">Buscar</label>
-            <input class="form-control" id="filter-q" type="search" name="q" value="{{ filters.q }}" placeholder="Questão, prova, tema ou fonte">
+            <input class="form-control" id="filter-q" type="search" name="q" value="{{ filters.q }}" placeholder="Código, questão, prova, tema ou fonte">
         </div>
 
         <div class="question-filter-actions">
@@ -120,19 +109,17 @@
 
     {% if questions %}
         <div class="table-responsive">
-            <table class="table align-middle question-table mb-0">
+            <table class="table align-middle question-table question-table-compact mb-0">
                 <thead>
                     <tr>
                         <th>Data</th>
-                        <th>Disciplina</th>
                         <th>Questão</th>
-                        <th>Banca / prova</th>
+                        <th>Disciplina / tema</th>
+                        <th>Banca</th>
                         <th>Aula</th>
-                        <th>Tema / subtema</th>
                         <th>Resultado</th>
                         <th>Revisão</th>
                         <th>Link</th>
-                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -140,45 +127,35 @@
                         <tr>
                             <td>{{ item.answered_date|date:"d/m/Y" }}</td>
                             <td>
-                                <a class="table-link" href="{% url 'competitions:discipline_detail' competition.pk item.competition_discipline.pk %}">
-                                    {{ item.competition_discipline.discipline.name }}
+                                <a class="question-code-link" href="{% url 'questions:question_detail' competition.pk item.pk %}">
+                                    {{ item.code }}
                                 </a>
                             </td>
-                            <td>
-                                <strong>{{ item.question_number }}</strong>
-                                {% if item.source %}
-                                    <span class="question-secondary">{{ item.source }}</span>
-                                {% endif %}
+                            <td class="question-discipline-topic-cell">
+                                <a class="table-link question-discipline-link" href="{% url 'competitions:discipline_detail' competition.pk item.competition_discipline.pk %}">
+                                    {{ item.competition_discipline.discipline.name }}
+                                </a>
+                                <span class="question-secondary question-topic-preview">{{ item.topic_subtopic|default:"Sem tema/subtema registrado" }}</span>
                             </td>
                             <td>
-                                {% if item.board %}<strong>{{ item.board }}</strong>{% endif %}
-                                {% if item.exam_context %}
-                                    <span class="question-secondary">{{ item.exam_context }}</span>
-                                {% endif %}
+                                {% if item.board %}<strong>{{ item.board }}</strong>{% else %}<span class="text-body-secondary">—</span>{% endif %}
                             </td>
                             <td>
                                 {% if item.lesson %}
-                                    <a class="table-link" href="{% url 'studies:lesson_list' competition.pk %}?disciplina={{ item.competition_discipline.pk }}&q={{ item.lesson.code }}">
+                                    <a class="question-lesson-link" href="{% url 'studies:lesson_list' competition.pk %}?disciplina={{ item.competition_discipline.pk }}&q={{ item.lesson.code }}">
                                         {{ item.lesson.code }}
                                     </a>
-                                    <span class="question-secondary">{{ item.lesson.title }}</span>
                                 {% else %}
                                     <span class="text-body-secondary">—</span>
                                 {% endif %}
                             </td>
-                            <td class="question-topic-cell">{{ item.topic_subtopic|default:"—" }}</td>
-                            <td>
-                                <span class="question-result question-result-{{ item.result }}">{{ item.get_result_display }}</span>
-                            </td>
+                            <td><span class="question-result question-result-{{ item.result }}">{{ item.get_result_display }}</span></td>
                             <td>
                                 {% if item.review_required %}
                                     {% if item.review_status == "completed" %}
                                         <span class="question-review question-review-completed">Concluída</span>
                                     {% else %}
                                         <span class="question-review question-review-pending">Pendente</span>
-                                        {% if item.next_review %}
-                                            <span class="question-secondary">{{ item.next_review|date:"d/m/Y" }}</span>
-                                        {% endif %}
                                     {% endif %}
                                 {% else %}
                                     <span class="text-body-secondary">—</span>
@@ -195,17 +172,18 @@
                                     <span class="text-body-secondary">—</span>
                                 {% endif %}
                             </td>
-                            <td class="text-end">
-                                <a class="btn btn-sm btn-outline-secondary" href="{% url 'questions:question_edit' competition.pk item.pk %}">Editar</a>
-                            </td>
                         </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
 
+        <div class="question-pagination-summary mt-3">
+            Mostrando {{ page_obj.start_index }}–{{ page_obj.end_index }} de {{ page_obj.paginator.count }} questão{{ page_obj.paginator.count|pluralize:"ões" }}.
+        </div>
+
         {% if page_obj.paginator.num_pages > 1 %}
-            <nav class="question-pagination mt-4" aria-label="Paginação das questões">
+            <nav class="question-pagination mt-3" aria-label="Paginação das questões">
                 {% if page_obj.has_previous %}
                     <a class="btn btn-sm btn-outline-secondary" href="?pagina={{ page_obj.previous_page_number }}&disciplina={{ filters.discipline }}&aula={{ filters.lesson }}&resultado={{ filters.result }}&revisao={{ filters.review }}&banca={{ filters.board|urlencode }}&data={{ filters.date }}&q={{ filters.q|urlencode }}">Anterior</a>
                 {% endif %}
