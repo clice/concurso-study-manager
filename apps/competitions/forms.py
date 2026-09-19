@@ -237,6 +237,10 @@ class SyllabusItemForm(forms.ModelForm):
             "priority": "Prioridade (opcional)",
         }
         help_texts = {
+            "parent": (
+                "Use apenas para subitens. Depois que um item for salvo nesta disciplina, "
+                "ele passa a aparecer aqui como possível item-pai."
+            ),
             "item_code": (
                 "Deixe vazio para gerar automaticamente. "
                 "Preencha apenas se o edital usar uma numeração diferente."
