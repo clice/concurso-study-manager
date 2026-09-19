@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }} | {{ competition.name }}{% endblock %}
+
+{% block content %}
+<div class="page-heading mb-4">
+    <div>
+        <p class="eyebrow mb-1">AULAS</p>
+        <h1 class="h2 mb-1">{{ page_title }}</h1>
+        <p class="text-body-secondary mb-0">{{ competition.name }}</p>
+    </div>
+    <a class="btn btn-outline-secondary" href="{% url 'studies:lesson_list' competition.pk %}?disciplina={{ discipline_link.pk }}">Voltar</a>
+</div>
+
+<form method="post" class="form-card">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+        <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+    {% endif %}
+
+    <div class="form-section">
+        <div class="section-heading">
+            <span class="section-number">1</span>
+            <div>
+                <h2 class="h5 mb-1">Identificação</h2>
+                <p class="text-body-secondary small mb-0">A disciplina já vem definida pelo ponto de entrada da aula.</p>
+            </div>
+        </div>
+
+        <div class="lesson-context-grid mb-3">
+            <div class="lesson-context-card">
+                <span>Disciplina</span>
+                <strong>{{ discipline_link.discipline.name }}</strong>
+            </div>
+            <div class="lesson-context-card">
+                <span>Código da aula</span>
+                <strong>{% if lesson %}{{ lesson.code }}{% else %}Gerado automaticamente ao salvar{% endif %}</strong>
+            </div>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-12 col-lg-4">{% include "competitions/field.html" with field=form.source %}</div>
+            <div class="col-12 col-lg-8">{% include "competitions/field.html" with field=form.title %}</div>
+            <div class="col-12 col-lg-4">{% include "competitions/field.html" with field=form.macrotheme %}</div>
+            <div class="col-12 col-lg-8">
+                <div class="syllabus-checkbox-panel">
+                    {% include "competitions/field.html" with field=form.syllabus_items %}
+                </div>
+                <p class="form-text mb-0">Aqui aparecem somente os itens de {{ discipline_link.discipline.name }}. Você pode marcar vários normalmente.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-section">
+        <div class="section-heading">
+            <span class="section-number">2</span>
+            <div>
+                <h2 class="h5 mb-1">Planejamento e progresso</h2>
+                <p class="text-body-secondary small mb-0">Semana, datas e estado real da aula.</p>
+            </div>
+        </div>
+        <div class="row g-3">
+            <div class="col-12 col-md-3">{% include "competitions/field.html" with field=form.suggested_week %}</div>
+            <div class="col-12 col-md-3">{% include "competitions/field.html" with field=form.planned_date %}</div>
+            <div class="col-12 col-md-3">{% include "competitions/field.html" with field=form.studied_date %}</div>
+            <div class="col-12 col-md-3">{% include "competitions/field.html" with field=form.status %}</div>
+        </div>
+    </div>
+
+    <div class="form-section">
+        <div class="section-heading">
+            <span class="section-number">3</span>
+            <div>
+                <h2 class="h5 mb-1">Materiais</h2>
+                <p class="text-body-secondary small mb-0">Links da videoaula, degravação e apostila.</p>
+            </div>
+        </div>
+        <div class="row g-3">
+            <div class="col-12">{% include "competitions/field.html" with field=form.video_url %}</div>
+            <div class="col-12">{% include "competitions/field.html" with field=form.transcript_url %}</div>
+            <div class="col-12">{% include "competitions/field.html" with field=form.handout_url %}</div>
+        </div>
+    </div>
+
+    <div class="form-section">
+        <div class="section-heading">
+            <span class="section-number">4</span>
+            <div>
+                <h2 class="h5 mb-1">Prática e observações</h2>
+                <p class="text-body-secondary small mb-0">Questões e registros do acompanhamento da aula.</p>
+            </div>
+        </div>
+        <div class="row g-3">
+            <div class="col-12 col-md-3">{% include "competitions/field.html" with field=form.questions_done %}</div>
+            <div class="col-12 col-md-3">{% include "competitions/field.html" with field=form.correct_answers %}</div>
+            <div class="col-12">{% include "competitions/field.html" with field=form.notes %}</div>
+        </div>
+    </div>
+
+    <div class="form-actions d-flex justify-content-end gap-2">
+        <a class="btn btn-outline-secondary" href="{% url 'studies:lesson_list' competition.pk %}?disciplina={{ discipline_link.pk }}">Cancelar</a>
+        <button class="btn btn-primary" type="submit">{{ submit_label }}</button>
+    </div>
+</form>
+{% endblock %}

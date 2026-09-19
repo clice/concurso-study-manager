@@ -6,6 +6,7 @@
     <title>{% block title %}Concurso Study Manager{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/app.css">
+    {% block extra_head %}{% endblock %}
     <script defer src="/static/js/app.js"></script>
 </head>
 <body>
@@ -31,5 +32,6 @@
         {% endif %}
         {% block content %}{% endblock %}
     </main>
+    {% block extra_scripts %}{% endblock %}
 </body>
 </html>

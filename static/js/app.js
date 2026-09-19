@@ -106,6 +106,65 @@ function updateCollapsibleSummary(details) {
     summary.classList.toggle("btn-outline-secondary", details.open);
 }
 
+function positionLessonActionPopover(popover) {
+    const button = document.querySelector(
+        `[popovertarget="${popover.id}"]`
+    );
+    if (!button) return;
+
+    const gap = 8;
+    const viewportPadding = 12;
+    const buttonRect = button.getBoundingClientRect();
+
+    popover.style.left = "0px";
+    popover.style.top = "0px";
+    popover.style.maxHeight = `${Math.max(120, window.innerHeight - viewportPadding * 2)}px`;
+
+    const popoverRect = popover.getBoundingClientRect();
+    const roomBelow = window.innerHeight - buttonRect.bottom - viewportPadding;
+    const roomAbove = buttonRect.top - viewportPadding;
+    const openAbove = roomBelow < popoverRect.height + gap && roomAbove > roomBelow;
+
+    let top = openAbove
+        ? buttonRect.top - popoverRect.height - gap
+        : buttonRect.bottom + gap;
+
+    top = Math.max(
+        viewportPadding,
+        Math.min(top, window.innerHeight - popoverRect.height - viewportPadding)
+    );
+
+    let left = buttonRect.left + (buttonRect.width - popoverRect.width) / 2;
+    left = Math.max(
+        viewportPadding,
+        Math.min(left, window.innerWidth - popoverRect.width - viewportPadding)
+    );
+
+    popover.dataset.placement = openAbove ? "top" : "bottom";
+    popover.style.left = `${left}px`;
+    popover.style.top = `${top}px`;
+}
+
+function enableLessonActionPopovers() {
+    document.querySelectorAll("[data-lesson-popover]").forEach((popover) => {
+        popover.addEventListener("toggle", (event) => {
+            if (event.newState !== "open") return;
+
+            window.requestAnimationFrame(() => {
+                positionLessonActionPopover(popover);
+            });
+        });
+    });
+
+    const closeOpenPopovers = () => {
+        document.querySelectorAll("[data-lesson-popover]:popover-open")
+            .forEach((popover) => popover.hidePopover());
+    };
+
+    window.addEventListener("resize", closeOpenPopovers);
+    window.addEventListener("scroll", closeOpenPopovers, true);
+}
+
 function enableCollapsibleForms() {
     document.querySelectorAll("[data-collapsible-form]").forEach((details) => {
         updateCollapsibleSummary(details);
@@ -147,4 +206,5 @@ document.addEventListener("DOMContentLoaded", () => {
 
     enableSortableLists();
     enableCollapsibleForms();
+    enableLessonActionPopovers();
 });

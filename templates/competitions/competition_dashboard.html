@@ -14,10 +14,202 @@
 
 {% include "competitions/competition_nav.html" %}
 
+<div class="dashboard-kpis mb-4">
+    <div class="dashboard-kpi">
+        <span>Aulas concluídas</span>
+        <strong>{{ completed_lessons }} / {{ total_lessons }}</strong>
+        <small>{{ lesson_progress|floatformat:"-1" }}% do curso</small>
+    </div>
+
+    <div class="dashboard-kpi">
+        <span>Questões feitas</span>
+        <strong>{{ total_questions }}</strong>
+        <small>
+            {% if overall_accuracy is not None %}
+                {{ total_correct }} acertos · {{ overall_accuracy|floatformat:"-1" }}%
+            {% else %}
+                Sem questões registradas
+            {% endif %}
+        </small>
+    </div>
+
+    <div class="dashboard-kpi">
+        <span>Edital mapeado</span>
+        <strong>{{ covered_syllabus_items }} / {{ total_syllabus_items }}</strong>
+        <small>{{ syllabus_coverage|floatformat:"-1" }}% dos itens têm ao menos uma aula vinculada</small>
+    </div>
+
+    <div class="dashboard-kpi">
+        <span>Até a prova</span>
+        {% if days_to_exam is None %}
+            <strong>—</strong>
+            <small>Data da prova não cadastrada</small>
+        {% elif days_to_exam > 1 %}
+            <strong>{{ days_to_exam }} dias</strong>
+            <small>{{ competition.exam_date|date:"d/m/Y" }}</small>
+        {% elif days_to_exam == 1 %}
+            <strong>1 dia</strong>
+            <small>{{ competition.exam_date|date:"d/m/Y" }}</small>
+        {% elif days_to_exam == 0 %}
+            <strong>Hoje</strong>
+            <small>{{ competition.exam_date|date:"d/m/Y" }}</small>
+        {% else %}
+            <strong>Realizada</strong>
+            <small>{{ competition.exam_date|date:"d/m/Y" }}</small>
+        {% endif %}
+    </div>
+</div>
+
+<div class="dashboard-grid mb-4">
+    <section class="content-card dashboard-chart-card dashboard-chart-wide">
+        <div class="dashboard-chart-heading">
+            <div>
+                <p class="eyebrow mb-1">AULAS</p>
+                <h2 class="h5 mb-1">Progresso por disciplina</h2>
+                <p class="text-body-secondary small mb-0">Percentual de aulas com status Concluída.</p>
+            </div>
+        </div>
+        <div class="dashboard-chart dashboard-chart-tall">
+            <canvas id="lesson-progress-chart"></canvas>
+        </div>
+    </section>
+
+    <section class="content-card dashboard-chart-card">
+        <div class="dashboard-chart-heading">
+            <div>
+                <p class="eyebrow mb-1">STATUS</p>
+                <h2 class="h5 mb-1">Situação das aulas</h2>
+                <p class="text-body-secondary small mb-0">Distribuição das {{ total_lessons }} aulas cadastradas.</p>
+            </div>
+        </div>
+        <div class="dashboard-chart dashboard-chart-donut">
+            <canvas id="lesson-status-chart"></canvas>
+        </div>
+    </section>
+
+    <section class="content-card dashboard-chart-card dashboard-chart-accuracy">
+        <div class="dashboard-chart-heading">
+            <div>
+                <p class="eyebrow mb-1">QUESTÕES</p>
+                <h2 class="h5 mb-1">Taxa de acerto por disciplina</h2>
+                <p class="text-body-secondary small mb-0">Calculada somente onde há questões respondidas.</p>
+            </div>
+        </div>
+        <div class="dashboard-chart dashboard-chart-tall">
+            <canvas id="accuracy-chart"></canvas>
+        </div>
+    </section>
+
+    <section class="content-card dashboard-chart-card dashboard-chart-half">
+        <div class="dashboard-chart-heading">
+            <div>
+                <p class="eyebrow mb-1">EDITAL</p>
+                <h2 class="h5 mb-1">Mapeamento do edital por disciplina</h2>
+                <p class="text-body-secondary small mb-0">Percentual de itens do edital que possuem ao menos uma aula vinculada. Não representa conteúdo já estudado.</p>
+            </div>
+        </div>
+        <div class="dashboard-chart dashboard-chart-tall">
+            <canvas id="syllabus-coverage-chart"></canvas>
+        </div>
+    </section>
+
+    <section class="content-card dashboard-chart-card dashboard-chart-half">
+        <div class="dashboard-chart-heading">
+            <div>
+                <p class="eyebrow mb-1">PLANEJAMENTO</p>
+                <h2 class="h5 mb-1">Aulas por semana sugerida</h2>
+                <p class="text-body-secondary small mb-0">Compara o total previsto com quantas aulas já estão concluídas em cada semana.</p>
+            </div>
+        </div>
+        <div class="dashboard-chart dashboard-chart-weekly dashboard-chart-tall">
+            <canvas id="weekly-chart"></canvas>
+        </div>
+    </section>
+</div>
+
 <section class="content-card">
-    <div class="empty-state border-0 p-4">
-        <h2 class="h5">Indicadores e gráficos ficarão aqui</h2>
-        <p class="text-body-secondary mb-0">Vamos construir esta área depois que aulas e registros de estudo estiverem modelados, para os gráficos usarem dados reais do sistema.</p>
+    <div class="content-card-header mb-3">
+        <div>
+            <p class="eyebrow mb-1">RESUMO</p>
+            <h2 class="h4 mb-1">Desempenho por disciplina</h2>
+            <p class="text-body-secondary small mb-0">Os percentuais abaixo usam somente os registros já existentes no sistema.</p>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table align-middle dashboard-summary-table mb-0">
+            <thead>
+                <tr>
+                    <th>Disciplina</th>
+                    <th>Aulas</th>
+                    <th>Progresso</th>
+                    <th>Questões</th>
+                    <th>Acertos</th>
+                    <th>% acerto</th>
+                    <th>Itens mapeados</th>
+                    <th>Mapeamento</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in discipline_rows %}
+                    <tr>
+                        <td>
+                            <a class="table-link" href="{% url 'competitions:discipline_detail' competition.pk row.id %}">
+                                <strong>{{ row.name }}</strong>
+                            </a>
+                            <span class="dashboard-discipline-meta">
+                                {{ row.knowledge_area }} ·
+                                <span class="priority-pill priority-{{ row.priority|lower }}">{{ row.priority }}</span>
+                            </span>
+                        </td>
+                        <td>{{ row.lessons_completed }} / {{ row.lessons_total }}</td>
+                        <td>
+                            <div class="dashboard-progress-cell">
+                                <div class="dashboard-progress-track">
+                                    <span style="width: {% widthratio row.lesson_progress 100 100 %}%"></span>
+                                </div>
+                                <strong>{{ row.lesson_progress|floatformat:"-1" }}%</strong>
+                            </div>
+                        </td>
+                        <td>{{ row.questions }}</td>
+                        <td>{{ row.correct }}</td>
+                        <td>{% if row.accuracy is not None %}{{ row.accuracy|floatformat:"-1" }}%{% else %}—{% endif %}</td>
+                        <td>{{ row.syllabus_covered }} / {{ row.syllabus_total }}</td>
+                        <td>{{ row.syllabus_coverage|floatformat:"-1" }}%</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-body-secondary">Nenhuma disciplina cadastrada.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr class="dashboard-total-row">
+                    <td><strong>Total</strong></td>
+                    <td><strong>{{ completed_lessons }} / {{ total_lessons }}</strong></td>
+                    <td>
+                        <div class="dashboard-progress-cell">
+                            <div class="dashboard-progress-track">
+                                <span style="width: {% widthratio lesson_progress 100 100 %}%"></span>
+                            </div>
+                            <strong>{{ lesson_progress|floatformat:"-1" }}%</strong>
+                        </div>
+                    </td>
+                    <td><strong>{{ total_questions }}</strong></td>
+                    <td><strong>{{ total_correct }}</strong></td>
+                    <td><strong>{% if overall_accuracy is not None %}{{ overall_accuracy|floatformat:"-1" }}%{% else %}—{% endif %}</strong></td>
+                    <td><strong>{{ covered_syllabus_items }} / {{ total_syllabus_items }}</strong></td>
+                    <td><strong>{{ syllabus_coverage|floatformat:"-1" }}%</strong></td>
+                </tr>
+            </tfoot>
+        </table>
     </div>
 </section>
+
+{{ chart_data|json_script:"competition-dashboard-data" }}
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.min.js"></script>
+<script defer src="/static/js/dashboard.js"></script>
 {% endblock %}

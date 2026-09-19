@@ -2,11 +2,14 @@ import json
 
 from django.contrib import messages
 from django.db import IntegrityError, transaction
-from django.db.models import Count, Sum
+from django.db.models import Count, Q, Sum
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils import timezone
 from django.views.decorators.http import require_POST
+
+from apps.studies.models import Lesson
 
 from .forms import (
     CompetitionDisciplineForm,
@@ -188,26 +191,195 @@ def competition_syllabus(request, pk):
     )
 
 
-def competition_lessons(request, pk):
-    competition = _competition_or_404(pk)
-    return render(
-        request,
-        "competitions/competition_lessons.html",
-        {
-            "competition": competition,
-            "active_tab": "lessons",
-        },
-    )
-
-
 def competition_dashboard(request, pk):
     competition = _competition_or_404(pk)
+    lesson_qs = Lesson.objects.filter(
+        competition_discipline__competition=competition
+    )
+
+    total_lessons = lesson_qs.count()
+    completed_lessons = lesson_qs.filter(
+        status=Lesson.Status.COMPLETED
+    ).count()
+    in_progress_lessons = lesson_qs.filter(
+        status=Lesson.Status.IN_PROGRESS
+    ).count()
+    not_started_lessons = lesson_qs.filter(
+        status=Lesson.Status.NOT_STARTED
+    ).count()
+
+    lesson_progress = (
+        round((completed_lessons / total_lessons) * 100, 1)
+        if total_lessons
+        else 0
+    )
+
+    practice_totals = lesson_qs.aggregate(
+        questions=Sum("questions_done"),
+        correct=Sum("correct_answers"),
+    )
+    total_questions = practice_totals["questions"] or 0
+    total_correct = practice_totals["correct"] or 0
+    overall_accuracy = (
+        round((total_correct / total_questions) * 100, 1)
+        if total_questions
+        else None
+    )
+
+    syllabus_qs = SyllabusItem.objects.filter(
+        competition_discipline__competition=competition
+    )
+    total_syllabus_items = syllabus_qs.count()
+    covered_syllabus_items = syllabus_qs.filter(
+        lessons__competition_discipline__competition=competition
+    ).distinct().count()
+    syllabus_coverage = (
+        round((covered_syllabus_items / total_syllabus_items) * 100, 1)
+        if total_syllabus_items
+        else 0
+    )
+
+    lesson_stats = {
+        row["competition_discipline_id"]: row
+        for row in (
+            lesson_qs.values("competition_discipline_id")
+            .annotate(
+                total=Count("id"),
+                completed=Count(
+                    "id",
+                    filter=Q(status=Lesson.Status.COMPLETED),
+                ),
+                in_progress=Count(
+                    "id",
+                    filter=Q(status=Lesson.Status.IN_PROGRESS),
+                ),
+                questions=Sum("questions_done"),
+                correct=Sum("correct_answers"),
+            )
+        )
+    }
+
+    syllabus_stats = {
+        row["competition_discipline_id"]: row
+        for row in (
+            syllabus_qs.values("competition_discipline_id")
+            .annotate(
+                total=Count("id", distinct=True),
+                covered=Count(
+                    "id",
+                    filter=Q(lessons__isnull=False),
+                    distinct=True,
+                ),
+            )
+        )
+    }
+
+    discipline_rows = []
+    for link in competition.discipline_links.select_related(
+        "discipline"
+    ).order_by("position", "discipline__name"):
+        lesson_data = lesson_stats.get(link.pk, {})
+        syllabus_data = syllabus_stats.get(link.pk, {})
+
+        lessons_total = lesson_data.get("total", 0) or 0
+        lessons_completed = lesson_data.get("completed", 0) or 0
+        questions = lesson_data.get("questions", 0) or 0
+        correct = lesson_data.get("correct", 0) or 0
+        syllabus_total = syllabus_data.get("total", 0) or 0
+        syllabus_covered = syllabus_data.get("covered", 0) or 0
+
+        discipline_rows.append(
+            {
+                "id": link.pk,
+                "name": link.discipline.name,
+                "knowledge_area": link.get_knowledge_area_display(),
+                "priority": link.priority,
+                "lessons_total": lessons_total,
+                "lessons_completed": lessons_completed,
+                "lesson_progress": (
+                    round((lessons_completed / lessons_total) * 100, 1)
+                    if lessons_total
+                    else 0
+                ),
+                "questions": questions,
+                "correct": correct,
+                "accuracy": (
+                    round((correct / questions) * 100, 1)
+                    if questions
+                    else None
+                ),
+                "syllabus_total": syllabus_total,
+                "syllabus_covered": syllabus_covered,
+                "syllabus_coverage": (
+                    round((syllabus_covered / syllabus_total) * 100, 1)
+                    if syllabus_total
+                    else 0
+                ),
+            }
+        )
+
+    weekly_rows = list(
+        lesson_qs.filter(suggested_week__isnull=False)
+        .values("suggested_week")
+        .annotate(
+            total=Count("id"),
+            completed=Count(
+                "id",
+                filter=Q(status=Lesson.Status.COMPLETED),
+            ),
+        )
+        .order_by("suggested_week")
+    )
+
+    days_to_exam = None
+    if competition.exam_date:
+        days_to_exam = (competition.exam_date - timezone.localdate()).days
+
+    chart_data = {
+        "disciplines": [row["name"] for row in discipline_rows],
+        "lesson_progress": [row["lesson_progress"] for row in discipline_rows],
+        "accuracy": [row["accuracy"] for row in discipline_rows],
+        "syllabus_coverage": [
+            row["syllabus_coverage"] for row in discipline_rows
+        ],
+        "status": {
+            "labels": ["Concluídas", "Em andamento", "Não iniciadas"],
+            "values": [
+                completed_lessons,
+                in_progress_lessons,
+                not_started_lessons,
+            ],
+        },
+        "weeks": {
+            "labels": [
+                f"Semana {row['suggested_week']}"
+                for row in weekly_rows
+            ],
+            "total": [row["total"] for row in weekly_rows],
+            "completed": [row["completed"] for row in weekly_rows],
+        },
+    }
+
     return render(
         request,
         "competitions/competition_dashboard.html",
         {
             "competition": competition,
             "active_tab": "dashboard",
+            "total_lessons": total_lessons,
+            "completed_lessons": completed_lessons,
+            "in_progress_lessons": in_progress_lessons,
+            "not_started_lessons": not_started_lessons,
+            "lesson_progress": lesson_progress,
+            "total_questions": total_questions,
+            "total_correct": total_correct,
+            "overall_accuracy": overall_accuracy,
+            "total_syllabus_items": total_syllabus_items,
+            "covered_syllabus_items": covered_syllabus_items,
+            "syllabus_coverage": syllabus_coverage,
+            "days_to_exam": days_to_exam,
+            "discipline_rows": discipline_rows,
+            "chart_data": chart_data,
         },
     )
 
@@ -231,6 +403,7 @@ def discipline_detail(request, pk, link_id):
             "link": link,
             "syllabus_items": syllabus_items,
             "syllabus_item_count": len(syllabus_items),
+            "lesson_count": link.lessons.count(),
             "active_tab": "overview",
         },
     )
