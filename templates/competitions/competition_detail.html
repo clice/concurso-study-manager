@@ -61,11 +61,22 @@
                         <div class="small text-body-secondary mt-1">
                             {% if stage.scheduled_date %}{{ stage.scheduled_date|date:"d/m/Y" }}{% endif %}
                             {% if stage.scheduled_time %} às {{ stage.scheduled_time|time:"H:i" }}{% endif %}
-                            {% if stage.max_score %} · Máx. {{ stage.max_score }} pts{% endif %}
-                            {% if stage.minimum_score %} · Mín. {{ stage.minimum_score }} pts{% endif %}
+                            {% if stage.max_score %} · Máx. {{ stage.max_score|floatformat:"-2" }} pts{% endif %}
+                            {% if stage.minimum_score %} · Mín. {{ stage.minimum_score|floatformat:"-2" }} pts{% endif %}
                         </div>
+
+                        {% if stage.minimum_score or stage.requires_nonzero_each_discipline %}
+                            <div class="approval-rule mt-2">
+                                <strong>Critério de aprovação:</strong>
+                                {% if stage.minimum_score %}mínimo de {{ stage.minimum_score|floatformat:"-2" }} pontos{% endif %}
+                                {% if stage.minimum_score and stage.requires_nonzero_each_discipline %} e {% endif %}
+                                {% if stage.requires_nonzero_each_discipline %}não zerar nenhuma disciplina{% endif %}.
+                            </div>
+                        {% endif %}
+
                         {% if stage.details %}<p class="small mb-0 mt-2">{{ stage.details }}</p>{% endif %}
                     </div>
+                    <a class="btn btn-sm btn-outline-secondary flex-shrink-0" href="{% url 'competitions:stage_edit' competition.pk stage.pk %}">Editar</a>
                 </div>
             {% endfor %}
         </div>
@@ -73,7 +84,12 @@
         <div class="soft-empty mb-4">Nenhuma etapa cadastrada ainda.</div>
     {% endif %}
 
-    <details {% if open_section == "stages" %}open{% endif %}>
+    <details
+        {% if open_section == "stages" %}open{% endif %}
+        data-collapsible-form
+        data-open-label="Cancelar etapa"
+        data-closed-label="Adicionar etapa"
+    >
         <summary class="btn btn-outline-primary">Adicionar etapa</summary>
         <form class="nested-form mt-3" method="post" action="{% url 'competitions:stage_add' competition.pk %}">
             {% csrf_token %}
@@ -86,6 +102,7 @@
                 <div class="col-12 d-flex flex-wrap gap-4">
                     <div class="form-check">{{ stage_form.eliminatory }} <label class="form-check-label" for="{{ stage_form.eliminatory.id_for_label }}">Eliminatória</label></div>
                     <div class="form-check">{{ stage_form.classificatory }} <label class="form-check-label" for="{{ stage_form.classificatory.id_for_label }}">Classificatória</label></div>
+                    <div class="form-check">{{ stage_form.requires_nonzero_each_discipline }} <label class="form-check-label" for="{{ stage_form.requires_nonzero_each_discipline.id_for_label }}">Não pode zerar nenhuma disciplina</label></div>
                 </div>
                 <div class="col-12">{% include "competitions/field.html" with field=stage_form.details %}</div>
             </div>
@@ -115,6 +132,7 @@
                         <th>Peso</th>
                         <th>Pontuação máxima</th>
                         <th>Pontuação mínima</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody
@@ -131,20 +149,48 @@
                             </td>
                             <td>{{ link.get_knowledge_area_display }}</td>
                             <td><span class="priority-pill priority-{{ link.priority|lower }}">{{ link.priority }}</span></td>
-                            <td>{{ link.expected_questions|default:"—" }}</td>
+                            <td>
+                                {% if link.expected_questions is not None %}
+                                    {{ link.expected_questions }}
+                                    {% if link.question_count_kind == "estimated" %}
+                                        <span class="badge rounded-pill badge-soft-warning ms-1">Estimativa</span>
+                                    {% endif %}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
                             <td>{{ link.weight|default:"—" }}</td>
                             <td>{{ link.max_score|default:"—" }}</td>
                             <td>{{ link.minimum_score|default:"—" }}</td>
+                            <td class="text-end"><a class="btn btn-sm btn-outline-secondary" href="{% url 'competitions:discipline_edit' competition.pk link.pk %}">Editar</a></td>
                         </tr>
                     {% endfor %}
                 </tbody>
+                <tfoot>
+                    <tr class="totals-row">
+                        <th colspan="3">Total</th>
+                        <th>
+                            {{ total_questions|default:"—" }}
+                            {% if has_estimates %}<span class="badge rounded-pill badge-soft-warning ms-1">inclui estimativas</span>{% endif %}
+                        </th>
+                        <th>—</th>
+                        <th>{{ total_max_score|default:"—" }}</th>
+                        <th>—</th>
+                        <th></th>
+                    </tr>
+                </tfoot>
             </table>
         </div>
     {% else %}
         <div class="soft-empty mb-4">Nenhuma disciplina associada ainda.</div>
     {% endif %}
 
-    <details {% if open_section == "disciplines" %}open{% endif %}>
+    <details
+        {% if open_section == "disciplines" %}open{% endif %}
+        data-collapsible-form
+        data-open-label="Cancelar disciplina"
+        data-closed-label="Adicionar disciplina"
+    >
         <summary class="btn btn-outline-primary">Adicionar disciplina</summary>
         <form class="nested-form mt-3" method="post" action="{% url 'competitions:discipline_add' competition.pk %}">
             {% csrf_token %}
@@ -156,9 +202,10 @@
                 <div class="col-12 col-md-6 col-lg-3">{% include "competitions/field.html" with field=discipline_form.knowledge_area %}</div>
                 <div class="col-12 col-md-6 col-lg-3">{% include "competitions/field.html" with field=discipline_form.priority %}</div>
                 <div class="col-12 col-md-6 col-lg-3">{% include "competitions/field.html" with field=discipline_form.expected_questions %}</div>
-                <div class="col-12 col-md-6 col-lg-3">{% include "competitions/field.html" with field=discipline_form.weight %}</div>
-                <div class="col-12 col-md-6">{% include "competitions/field.html" with field=discipline_form.max_score %}</div>
-                <div class="col-12 col-md-6">{% include "competitions/field.html" with field=discipline_form.minimum_score %}</div>
+                <div class="col-12 col-md-6 col-lg-3">{% include "competitions/field.html" with field=discipline_form.question_count_kind %}</div>
+                <div class="col-12 col-md-6 col-lg-4">{% include "competitions/field.html" with field=discipline_form.weight %}</div>
+                <div class="col-12 col-md-6 col-lg-4">{% include "competitions/field.html" with field=discipline_form.max_score %}</div>
+                <div class="col-12 col-md-6 col-lg-4">{% include "competitions/field.html" with field=discipline_form.minimum_score %}</div>
             </div>
             <button class="btn btn-primary mt-3" type="submit">Associar disciplina</button>
         </form>
