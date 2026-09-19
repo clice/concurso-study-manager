@@ -149,6 +149,7 @@
                                     {% endif %}
 
                                     <div class="lesson-actions-divider"></div>
+                                    <a class="lesson-action-edit" href="{% url 'questions:question_create' competition.pk lesson.competition_discipline.pk %}?aula={{ lesson.pk }}">Adicionar questão</a>
                                     <a class="lesson-action-edit" href="{% url 'studies:lesson_edit' competition.pk lesson.pk %}">Editar aula</a>
                                 </div>
                             </td>
