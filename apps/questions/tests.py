@@ -97,6 +97,30 @@ class QuestionRecordTests(TestCase):
         self.assertTrue(question.is_gran_url)
         self.assertEqual(question.result, QuestionRecord.Result.INCORRECT)
 
+    def test_board_is_select_with_other_option(self):
+        form = QuestionRecordForm(discipline_link=self.systems_link)
+
+        self.assertIn(("FGV", "FGV"), form.fields["board"].choices)
+        self.assertIn(("__other__", "Outra banca…"), form.fields["board"].choices)
+        self.assertEqual(form.fields["source"].label, "Fonte / origem")
+        self.assertEqual(
+            form.fields["review_required"].label,
+            "Marcar para revisão",
+        )
+
+    def test_other_board_value_is_saved(self):
+        form = QuestionRecordForm(
+            data=self.payload(
+                board="__other__",
+                board_other="FCC",
+            ),
+            discipline_link=self.systems_link,
+        )
+
+        self.assertTrue(form.is_valid(), form.errors)
+        record = form.save()
+        self.assertEqual(record.board, "FCC")
+
     def test_form_only_lists_lessons_from_fixed_discipline(self):
         form = QuestionRecordForm(discipline_link=self.systems_link)
 
@@ -208,3 +232,113 @@ class QuestionRecordTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context["questions"]), 50)
         self.assertEqual(response.context["page_obj"].paginator.num_pages, 2)
+
+
+
+class GlobalQuestionViewsTests(TestCase):
+    def setUp(self):
+        board, _ = ExamBoard.objects.get_or_create(
+            acronym="FGV",
+            defaults={"name": "Fundação Getulio Vargas"},
+        )
+        other_board, _ = ExamBoard.objects.get_or_create(
+            acronym="CESPE",
+            defaults={"name": "CESPE"},
+        )
+
+        systems = Discipline.objects.create(name="Desenvolvimento de Sistemas")
+
+        self.dataprev = Competition.objects.create(
+            name="DATAPREV 2026",
+            organization="DATAPREV",
+            role="ATI",
+            board=board,
+            status=Competition.Status.ACTIVE,
+        )
+        self.other_competition = Competition.objects.create(
+            name="Outro Concurso 2027",
+            organization="Órgão X",
+            role="Analista",
+            board=other_board,
+            status=Competition.Status.PLANNED,
+        )
+
+        self.dataprev_link = CompetitionDiscipline.objects.create(
+            competition=self.dataprev,
+            discipline=systems,
+            knowledge_area=CompetitionDiscipline.KnowledgeArea.SPECIFIC,
+            priority=CompetitionDiscipline.Priority.P1,
+        )
+        self.other_link = CompetitionDiscipline.objects.create(
+            competition=self.other_competition,
+            discipline=systems,
+            knowledge_area=CompetitionDiscipline.KnowledgeArea.SPECIFIC,
+            priority=CompetitionDiscipline.Priority.P1,
+        )
+
+        QuestionRecord.objects.create(
+            competition_discipline=self.dataprev_link,
+            answered_date=date(2026, 8, 10),
+            board="FGV",
+            question_number="Q1",
+            result=QuestionRecord.Result.CORRECT,
+        )
+        QuestionRecord.objects.create(
+            competition_discipline=self.dataprev_link,
+            answered_date=date(2026, 8, 20),
+            board="FGV",
+            question_number="Q2",
+            result=QuestionRecord.Result.INCORRECT,
+        )
+        QuestionRecord.objects.create(
+            competition_discipline=self.other_link,
+            answered_date=date(2027, 1, 15),
+            board="CESPE/CEBRASPE",
+            question_number="Q3",
+            result=QuestionRecord.Result.CORRECT,
+        )
+
+    def test_global_question_list_combines_competitions(self):
+        response = self.client.get(reverse("questions_global:list"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "DATAPREV 2026")
+        self.assertContains(response, "Outro Concurso 2027")
+        self.assertEqual(response.context["metrics"]["total"], 3)
+        self.assertEqual(response.context["metrics"]["correct"], 2)
+        self.assertEqual(response.context["metrics"]["incorrect"], 1)
+        self.assertEqual(response.context["metrics"]["accuracy"], 66.7)
+
+    def test_global_question_list_filters_by_competition(self):
+        response = self.client.get(
+            reverse("questions_global:list"),
+            {"concurso": self.dataprev.pk},
+        )
+
+        self.assertEqual(response.context["metrics"]["total"], 2)
+        self.assertContains(response, "Q1")
+        self.assertContains(response, "Q2")
+        self.assertNotContains(response, "Q3")
+
+    def test_global_dashboard_has_time_and_cross_contest_data(self):
+        response = self.client.get(reverse("questions_global:dashboard"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Questões respondidas ao longo do tempo")
+        self.assertContains(response, "Taxa de acerto por concurso")
+
+        chart_data = response.context["chart_data"]
+        self.assertEqual(chart_data["months"]["labels"], ["08/2026", "01/2027"])
+        self.assertEqual(chart_data["months"]["questions"], [2, 1])
+        self.assertEqual(chart_data["months"]["accuracy"], [50.0, 100.0])
+        self.assertEqual(response.context["competitions_with_questions"], 2)
+
+    def test_global_new_question_starts_by_choosing_competition(self):
+        response = self.client.get(
+            reverse("questions_global:choose_competition")
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Escolha o concurso")
+        self.assertContains(response, "DATAPREV 2026")
+        self.assertContains(response, "Outro Concurso 2027")
