@@ -22,6 +22,7 @@ INSTALLED_APPS = [
     "apps.core",
     "apps.competitions",
     "apps.studies",
+    "apps.questions",
 ]
 
 MIDDLEWARE = [
