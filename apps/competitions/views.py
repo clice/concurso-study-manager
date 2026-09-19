@@ -189,15 +189,8 @@ def competition_syllabus(request, pk):
 
 
 def competition_lessons(request, pk):
-    competition = _competition_or_404(pk)
-    return render(
-        request,
-        "competitions/competition_lessons.html",
-        {
-            "competition": competition,
-            "active_tab": "lessons",
-        },
-    )
+    _competition_or_404(pk)
+    return redirect("studies:lesson_list", pk=pk)
 
 
 def competition_dashboard(request, pk):
@@ -231,6 +224,7 @@ def discipline_detail(request, pk, link_id):
             "link": link,
             "syllabus_items": syllabus_items,
             "syllabus_item_count": len(syllabus_items),
+            "lesson_count": link.lessons.count(),
             "active_tab": "overview",
         },
     )
