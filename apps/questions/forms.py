@@ -5,7 +5,16 @@ from apps.studies.models import Lesson
 from .models import QuestionRecord
 
 
+OTHER_BOARD_VALUE = "__other__"
+
+
 class QuestionRecordForm(forms.ModelForm):
+    board_other = forms.CharField(
+        required=False,
+        label="Outra banca",
+        help_text="Use somente quando a banca ainda não estiver na lista.",
+    )
+
     class Meta:
         model = QuestionRecord
         fields = [
@@ -38,9 +47,17 @@ class QuestionRecordForm(forms.ModelForm):
             "topic_subtopic": "Tema / subtema",
             "user_answer": "Sua resposta",
             "answer_key": "Gabarito",
-            "review_required": "Revisar?",
+            "source": "Fonte / origem",
+            "review_required": "Marcar para revisão",
             "question_url": "URL da questão",
             "url_pending": "URL pendente de identificação",
+        }
+        help_texts = {
+            "source": (
+                "Onde a questão foi usada ou localizada no estudo. "
+                "Ex.: Slides G588 — 6 - JUnit II, Degravação 47 — Conjunções "
+                "ou Gran Questões — curadoria. A URL individual fica no campo próprio."
+            ),
         }
 
     def __init__(self, *args, discipline_link=None, lesson=None, **kwargs):
@@ -57,7 +74,50 @@ class QuestionRecordForm(forms.ModelForm):
         if lesson and not self.is_bound:
             self.initial["lesson"] = lesson.pk
 
+        board_values = set(
+            QuestionRecord.objects.exclude(board="")
+            .values_list("board", flat=True)
+            .distinct()
+        )
+
+        if discipline_link and discipline_link.competition.board:
+            board_values.add(discipline_link.competition.board.acronym)
+
+        current_board = ""
+        if self.instance and self.instance.pk:
+            current_board = self.instance.board or ""
+            if current_board:
+                board_values.add(current_board)
+
+        board_choices = [("", "Selecione a banca")]
+        board_choices.extend(
+            (value, value)
+            for value in sorted(board_values, key=str.casefold)
+        )
+        board_choices.append((OTHER_BOARD_VALUE, "Outra banca…"))
+
+        self.fields["board"] = forms.ChoiceField(
+            required=False,
+            label="Banca",
+            choices=board_choices,
+            initial=current_board,
+            widget=forms.Select(
+                attrs={
+                    "class": "form-select",
+                    "data-question-board-select": "",
+                }
+            ),
+        )
+        self.fields["board_other"].widget.attrs.update(
+            {
+                "class": "form-control",
+                "data-question-board-other-input": "",
+            }
+        )
+
         for name, field in self.fields.items():
+            if name in {"board", "board_other"}:
+                continue
             if isinstance(field.widget, forms.CheckboxInput):
                 field.widget.attrs["class"] = "form-check-input"
             elif isinstance(field.widget, forms.Select):
@@ -68,6 +128,8 @@ class QuestionRecordForm(forms.ModelForm):
     def clean(self):
         cleaned = super().clean()
         lesson = cleaned.get("lesson")
+        board = cleaned.get("board", "")
+        board_other = (cleaned.get("board_other") or "").strip()
 
         if (
             lesson
@@ -79,12 +141,26 @@ class QuestionRecordForm(forms.ModelForm):
                 "Selecione somente uma aula desta disciplina.",
             )
 
+        if board == OTHER_BOARD_VALUE:
+            if not board_other:
+                self.add_error(
+                    "board_other",
+                    "Informe o nome da banca.",
+                )
+            else:
+                cleaned["board"] = board_other
+
         return cleaned
 
     def save(self, commit=True):
         record = super().save(commit=False)
         if not record.competition_discipline_id:
             record.competition_discipline = self.discipline_link
+
+        selected_board = self.cleaned_data.get("board", "")
+        if selected_board:
+            record.board = selected_board
+
         if commit:
             record.full_clean()
             record.save()
