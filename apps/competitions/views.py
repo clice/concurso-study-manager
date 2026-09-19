@@ -188,11 +188,6 @@ def competition_syllabus(request, pk):
     )
 
 
-def competition_lessons(request, pk):
-    _competition_or_404(pk)
-    return redirect("studies:lesson_list", pk=pk)
-
-
 def competition_dashboard(request, pk):
     competition = _competition_or_404(pk)
     return render(
