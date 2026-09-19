@@ -722,4 +722,4 @@ class CompetitionNavigationTests(TestCase):
         self.assertEqual(dashboard.status_code, 200)
         self.assertContains(dashboard, "Progresso por disciplina")
         self.assertContains(dashboard, "Situação das aulas")
-        self.assertContains(dashboard, "Cobertura por disciplina")
+        self.assertContains(dashboard, "Mapeamento do edital por disciplina")
