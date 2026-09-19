@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Editar etapa | {{ competition.name }}{% endblock %}
+
+{% block content %}
+<div class="page-heading mb-4">
+    <div>
+        <p class="eyebrow mb-1">ETAPAS</p>
+        <h1 class="h2 mb-1">Editar {{ stage.get_stage_type_display }}</h1>
+        <p class="text-body-secondary mb-0">{{ competition.name }}</p>
+    </div>
+    <a class="btn btn-outline-secondary" href="{% url 'competitions:detail' competition.pk %}#etapas">Voltar</a>
+</div>
+
+<form method="post" class="form-card">
+    {% csrf_token %}
+    <div class="row g-3">
+        <div class="col-12 col-md-4">{% include "competitions/field.html" with field=form.stage_type %}</div>
+        <div class="col-12 col-md-4">{% include "competitions/field.html" with field=form.scheduled_date %}</div>
+        <div class="col-12 col-md-4">{% include "competitions/field.html" with field=form.scheduled_time %}</div>
+        <div class="col-12 col-md-6">{% include "competitions/field.html" with field=form.max_score %}</div>
+        <div class="col-12 col-md-6">{% include "competitions/field.html" with field=form.minimum_score %}</div>
+        <div class="col-12 d-flex flex-wrap gap-4">
+            <div class="form-check">{{ form.eliminatory }} <label class="form-check-label" for="{{ form.eliminatory.id_for_label }}">Eliminatória</label></div>
+            <div class="form-check">{{ form.classificatory }} <label class="form-check-label" for="{{ form.classificatory.id_for_label }}">Classificatória</label></div>
+            <div class="form-check">{{ form.requires_nonzero_each_discipline }} <label class="form-check-label" for="{{ form.requires_nonzero_each_discipline.id_for_label }}">Não pode zerar nenhuma disciplina</label></div>
+        </div>
+        <div class="col-12">{% include "competitions/field.html" with field=form.details %}</div>
+    </div>
+    <div class="form-actions d-flex justify-content-end gap-2">
+        <a class="btn btn-outline-secondary" href="{% url 'competitions:detail' competition.pk %}#etapas">Cancelar</a>
+        <button class="btn btn-primary" type="submit">Salvar alterações</button>
+    </div>
+</form>
+{% endblock %}
