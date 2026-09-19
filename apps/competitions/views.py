@@ -117,10 +117,20 @@ def competition_detail(request, pk):
         ),
         pk=pk,
     )
+
+    open_syllabus_link_id = request.GET.get("edital")
+    try:
+        open_syllabus_link_id = int(open_syllabus_link_id) if open_syllabus_link_id else None
+    except (TypeError, ValueError):
+        open_syllabus_link_id = None
+
     return render(
         request,
         "competitions/competition_detail.html",
-        _competition_detail_context(competition),
+        _competition_detail_context(
+            competition,
+            open_syllabus_link_id=open_syllabus_link_id,
+        ),
     )
 
 
@@ -290,7 +300,7 @@ def syllabus_item_add(request, pk, link_id):
 
     if request.method != "POST":
         return redirect(
-            f'{reverse("competitions:detail", kwargs={"pk": pk})}#edital-{link.pk}'
+            f'{reverse("competitions:detail", kwargs={"pk": pk})}?edital={link.pk}#edital-{link.pk}'
         )
 
     form = SyllabusItemForm(
@@ -307,7 +317,7 @@ def syllabus_item_add(request, pk, link_id):
             f'Item "{label}" adicionado a {link.discipline.name}.',
         )
         return redirect(
-            f'{reverse("competitions:detail", kwargs={"pk": pk})}#edital-{link.pk}'
+            f'{reverse("competitions:detail", kwargs={"pk": pk})}?edital={link.pk}#edital-{link.pk}'
         )
 
     return render(
@@ -346,7 +356,7 @@ def syllabus_item_edit(request, pk, item_id):
             f'Item "{updated.item_code or "sem código"}" atualizado.',
         )
         return redirect(
-            f'{reverse("competitions:detail", kwargs={"pk": pk})}#edital-{link.pk}'
+            f'{reverse("competitions:detail", kwargs={"pk": pk})}?edital={link.pk}#edital-{link.pk}'
         )
 
     return render(
