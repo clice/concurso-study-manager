@@ -253,6 +253,8 @@ class LessonTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Ações")
+        self.assertContains(response, 'popover="auto"')
+        self.assertContains(response, 'data-lesson-popover')
         self.assertContains(response, "Videoaula ↗")
         self.assertContains(response, "Degravação ↗")
         self.assertContains(response, "Apostila —")
