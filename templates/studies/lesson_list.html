@@ -115,33 +115,42 @@
                             <td>{% if lesson.correct_answers is not None %}{{ lesson.correct_answers }}{% else %}—{% endif %}</td>
                             <td>{% if lesson.accuracy is not None %}{{ lesson.accuracy|floatformat:"-1" }}%{% else %}—{% endif %}</td>
                             <td class="lesson-actions-cell">
-                                <details class="lesson-actions" data-lesson-actions>
-                                    <summary class="btn btn-sm btn-outline-secondary">Ações</summary>
-                                    <div class="lesson-actions-panel">
-                                        <div class="lesson-actions-heading">Materiais</div>
+                                <button
+                                    class="btn btn-sm btn-outline-secondary"
+                                    type="button"
+                                    popovertarget="lesson-actions-{{ lesson.pk }}"
+                                    data-lesson-popover-button
+                                >Ações</button>
 
-                                        {% if lesson.video_url %}
-                                            <a class="lesson-action-link" href="{{ lesson.video_url }}" target="_blank" rel="noopener noreferrer">Videoaula ↗</a>
-                                        {% else %}
-                                            <span class="lesson-action-unavailable">Videoaula —</span>
-                                        {% endif %}
+                                <div
+                                    class="lesson-actions-popover"
+                                    id="lesson-actions-{{ lesson.pk }}"
+                                    popover="auto"
+                                    data-lesson-popover
+                                >
+                                    <div class="lesson-actions-heading">Materiais</div>
 
-                                        {% if lesson.transcript_url %}
-                                            <a class="lesson-action-link" href="{{ lesson.transcript_url }}" target="_blank" rel="noopener noreferrer">Degravação ↗</a>
-                                        {% else %}
-                                            <span class="lesson-action-unavailable">Degravação —</span>
-                                        {% endif %}
+                                    {% if lesson.video_url %}
+                                        <a class="lesson-action-link" href="{{ lesson.video_url }}" target="_blank" rel="noopener noreferrer">Videoaula ↗</a>
+                                    {% else %}
+                                        <span class="lesson-action-unavailable">Videoaula —</span>
+                                    {% endif %}
 
-                                        {% if lesson.handout_url %}
-                                            <a class="lesson-action-link" href="{{ lesson.handout_url }}" target="_blank" rel="noopener noreferrer">Apostila ↗</a>
-                                        {% else %}
-                                            <span class="lesson-action-unavailable">Apostila —</span>
-                                        {% endif %}
+                                    {% if lesson.transcript_url %}
+                                        <a class="lesson-action-link" href="{{ lesson.transcript_url }}" target="_blank" rel="noopener noreferrer">Degravação ↗</a>
+                                    {% else %}
+                                        <span class="lesson-action-unavailable">Degravação —</span>
+                                    {% endif %}
 
-                                        <div class="lesson-actions-divider"></div>
-                                        <a class="lesson-action-edit" href="{% url 'studies:lesson_edit' competition.pk lesson.pk %}">Editar aula</a>
-                                    </div>
-                                </details>
+                                    {% if lesson.handout_url %}
+                                        <a class="lesson-action-link" href="{{ lesson.handout_url }}" target="_blank" rel="noopener noreferrer">Apostila ↗</a>
+                                    {% else %}
+                                        <span class="lesson-action-unavailable">Apostila —</span>
+                                    {% endif %}
+
+                                    <div class="lesson-actions-divider"></div>
+                                    <a class="lesson-action-edit" href="{% url 'studies:lesson_edit' competition.pk lesson.pk %}">Editar aula</a>
+                                </div>
                             </td>
                         </tr>
                     {% endfor %}
