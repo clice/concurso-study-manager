@@ -236,13 +236,6 @@ class SyllabusItem(models.Model):
         ),
     )
     content = models.TextField("conteúdo do edital")
-    priority = models.CharField(
-        "prioridade",
-        max_length=2,
-        choices=CompetitionDiscipline.Priority.choices,
-        null=True,
-        blank=True,
-    )
     parent = models.ForeignKey(
         "self",
         on_delete=models.SET_NULL,
@@ -259,14 +252,6 @@ class SyllabusItem(models.Model):
         ordering = ["competition_discipline__position", "position", "id"]
         verbose_name = "item do edital"
         verbose_name_plural = "itens do edital"
-
-    @property
-    def effective_priority(self):
-        return self.priority or self.competition_discipline.priority
-
-    @property
-    def inherits_priority(self):
-        return not bool(self.priority)
 
     def _next_root_code(self):
         root_codes = (
