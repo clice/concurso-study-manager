@@ -94,6 +94,44 @@ function enableSortableLists() {
     });
 }
 
+function updateCollapsibleSummary(details) {
+    const summary = details.querySelector(":scope > summary");
+    if (!summary) return;
+
+    summary.textContent = details.open
+        ? details.dataset.openLabel
+        : details.dataset.closedLabel;
+
+    summary.classList.toggle("btn-outline-primary", !details.open);
+    summary.classList.toggle("btn-outline-secondary", details.open);
+}
+
+function enableCollapsibleForms() {
+    document.querySelectorAll("[data-collapsible-form]").forEach((details) => {
+        updateCollapsibleSummary(details);
+
+        if (details.open) {
+            window.setTimeout(() => {
+                details.scrollIntoView({behavior: "smooth", block: "start"});
+            }, 80);
+        }
+
+        details.addEventListener("toggle", () => {
+            updateCollapsibleSummary(details);
+
+            if (details.open) {
+                window.setTimeout(() => {
+                    details.scrollIntoView({behavior: "smooth", block: "start"});
+                }, 80);
+                return;
+            }
+
+            const form = details.querySelector("form");
+            if (form) form.reset();
+        });
+    });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll(".money-input").forEach((input) => {
         input.addEventListener("input", () => {
@@ -108,4 +146,5 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     enableSortableLists();
+    enableCollapsibleForms();
 });
