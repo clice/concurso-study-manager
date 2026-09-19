@@ -216,3 +216,60 @@ class CompetitionDiscipline(models.Model):
 
     def __str__(self):
         return f"{self.competition} — {self.discipline}"
+
+
+
+class SyllabusItem(models.Model):
+    competition_discipline = models.ForeignKey(
+        CompetitionDiscipline,
+        on_delete=models.CASCADE,
+        related_name="syllabus_items",
+        verbose_name="disciplina do concurso",
+    )
+    item_code = models.CharField(
+        "item / código",
+        max_length=40,
+        blank=True,
+        help_text="Numeração exatamente como aparece no edital, quando houver.",
+    )
+    content = models.TextField("conteúdo do edital")
+    priority = models.CharField(
+        "prioridade",
+        max_length=2,
+        choices=CompetitionDiscipline.Priority.choices,
+        default=CompetitionDiscipline.Priority.P2,
+    )
+    parent = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        related_name="children",
+        null=True,
+        blank=True,
+        verbose_name="item-pai",
+    )
+    position = models.PositiveIntegerField("posição", default=0, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["competition_discipline__position", "position", "id"]
+        verbose_name = "item do edital"
+        verbose_name_plural = "itens do edital"
+
+    def save(self, *args, **kwargs):
+        if not self.position and self.competition_discipline_id:
+            current_max = (
+                SyllabusItem.objects.filter(
+                    competition_discipline_id=self.competition_discipline_id
+                )
+                .aggregate(max_position=Max("position"))
+                .get("max_position")
+                or 0
+            )
+            self.position = current_max + 1
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        prefix = f"{self.item_code} — " if self.item_code else ""
+        preview = self.content.strip().replace("\n", " ")[:80]
+        return f"{prefix}{preview}"
