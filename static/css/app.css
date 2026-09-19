@@ -773,8 +773,11 @@ details > summary::-webkit-details-marker {
     box-shadow: 0 14px 32px rgba(31, 41, 55, .16);
     inset: auto;
     margin: 0;
+    max-width: calc(100vw - 24px);
     min-width: 170px;
+    overflow-y: auto;
     padding: .55rem;
+    position: fixed;
 }
 
 .lesson-actions-popover::backdrop {
