@@ -1,6 +1,12 @@
 from django.contrib import admin
 
-from .models import Competition, CompetitionDiscipline, CompetitionStage, Discipline
+from .models import (
+    Competition,
+    CompetitionDiscipline,
+    CompetitionStage,
+    Discipline,
+    ExamBoard,
+)
 
 
 class CompetitionStageInline(admin.TabularInline):
@@ -25,6 +31,12 @@ class CompetitionAdmin(admin.ModelAdmin):
 class CompetitionStageAdmin(admin.ModelAdmin):
     list_display = ("competition", "position", "name", "stage_type", "scheduled_date")
     list_filter = ("stage_type", "eliminatory", "classificatory")
+
+
+@admin.register(ExamBoard)
+class ExamBoardAdmin(admin.ModelAdmin):
+    list_display = ("acronym", "name")
+    search_fields = ("acronym", "name")
 
 
 @admin.register(Discipline)
