@@ -5,6 +5,9 @@
     <a class="competition-nav-link {% if active_tab == 'lessons' %}active{% endif %}" href="{% url 'studies:lesson_list' competition.pk %}">
         Aulas
     </a>
+    <a class="competition-nav-link {% if active_tab == 'questions' %}active{% endif %}" href="{% url 'questions:question_list' competition.pk %}">
+        Questões
+    </a>
     <a class="competition-nav-link {% if active_tab == 'syllabus' %}active{% endif %}" href="{% url 'competitions:syllabus' competition.pk %}">
         Edital
     </a>
