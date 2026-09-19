@@ -9,7 +9,7 @@
         <h1 class="h2 mb-1">{{ page_title }}</h1>
         <p class="text-body-secondary mb-0">{{ competition.name }}</p>
     </div>
-    <a class="btn btn-outline-secondary" href="{% url 'studies:lesson_list' competition.pk %}">Voltar</a>
+    <a class="btn btn-outline-secondary" href="{% url 'studies:lesson_list' competition.pk %}?disciplina={{ discipline_link.pk }}">Voltar</a>
 </div>
 
 <form method="post" class="form-card">
@@ -24,16 +24,29 @@
             <span class="section-number">1</span>
             <div>
                 <h2 class="h5 mb-1">Identificação</h2>
-                <p class="text-body-secondary small mb-0">Dados da aula e posição pedagógica no curso.</p>
+                <p class="text-body-secondary small mb-0">A disciplina já vem definida pelo ponto de entrada da aula.</p>
             </div>
         </div>
+
+        <div class="lesson-context-grid mb-3">
+            <div class="lesson-context-card">
+                <span>Disciplina</span>
+                <strong>{{ discipline_link.discipline.name }}</strong>
+            </div>
+            <div class="lesson-context-card">
+                <span>Código da aula</span>
+                <strong>{% if lesson %}{{ lesson.code }}{% else %}Gerado automaticamente ao salvar{% endif %}</strong>
+            </div>
+        </div>
+
         <div class="row g-3">
-            <div class="col-12 col-lg-5">{% include "competitions/field.html" with field=form.competition_discipline %}</div>
-            <div class="col-12 col-lg-2">{% include "competitions/field.html" with field=form.code %}</div>
-            <div class="col-12 col-lg-5">{% include "competitions/field.html" with field=form.source %}</div>
-            <div class="col-12">{% include "competitions/field.html" with field=form.title %}</div>
-            <div class="col-12 col-lg-5">{% include "competitions/field.html" with field=form.macrotheme %}</div>
-            <div class="col-12 col-lg-7">{% include "competitions/field.html" with field=form.syllabus_items %}</div>
+            <div class="col-12 col-lg-4">{% include "competitions/field.html" with field=form.source %}</div>
+            <div class="col-12 col-lg-8">{% include "competitions/field.html" with field=form.title %}</div>
+            <div class="col-12 col-lg-4">{% include "competitions/field.html" with field=form.macrotheme %}</div>
+            <div class="col-12 col-lg-8">
+                {% include "competitions/field.html" with field=form.syllabus_items %}
+                <p class="form-text mb-0">Aqui aparecem somente os itens de {{ discipline_link.discipline.name }}. Você pode marcar vários normalmente.</p>
+            </div>
         </div>
     </div>
 
@@ -73,7 +86,7 @@
             <span class="section-number">4</span>
             <div>
                 <h2 class="h5 mb-1">Prática e observações</h2>
-                <p class="text-body-secondary small mb-0">Dados que hoje aparecem no acompanhamento do Cronograma.</p>
+                <p class="text-body-secondary small mb-0">Questões e registros do acompanhamento da aula.</p>
             </div>
         </div>
         <div class="row g-3">
@@ -84,7 +97,7 @@
     </div>
 
     <div class="form-actions d-flex justify-content-end gap-2">
-        <a class="btn btn-outline-secondary" href="{% url 'studies:lesson_list' competition.pk %}">Cancelar</a>
+        <a class="btn btn-outline-secondary" href="{% url 'studies:lesson_list' competition.pk %}?disciplina={{ discipline_link.pk }}">Cancelar</a>
         <button class="btn btn-primary" type="submit">{{ submit_label }}</button>
     </div>
 </form>
