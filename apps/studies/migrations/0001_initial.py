@@ -140,7 +140,7 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="lesson",
             constraint=models.UniqueConstraint(
-                condition=models.Q(("code", ""), _negated=True),
+                condition=~models.Q(code=""),
                 fields=("competition_discipline", "code"),
                 name="unique_lesson_code_per_competition_discipline",
             ),
