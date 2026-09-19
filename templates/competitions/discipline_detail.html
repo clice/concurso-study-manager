@@ -19,7 +19,10 @@
 
 <div class="discipline-summary-grid mb-4">
     <div class="summary-item"><span>Grupo</span><strong>{{ link.get_knowledge_area_display }}</strong></div>
-    <div class="summary-item"><span>Prioridade</span><strong>{{ link.priority }}</strong></div>
+    <div class="summary-item">
+        <span>Prioridade</span>
+        <strong><span class="priority-pill priority-{{ link.priority|lower }}">{{ link.priority }}</span></strong>
+    </div>
     <div class="summary-item">
         <span>Questões</span>
         <strong>
