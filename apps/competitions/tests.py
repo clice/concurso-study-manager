@@ -497,3 +497,63 @@ class SyllabusItemTests(TestCase):
         self.assertContains(response, "subitem de 4")
         self.assertEqual(response.context["total_syllabus_items"], 2)
         self.assertEqual(response.context["syllabus_discipline_count"], 1)
+
+
+    def test_syllabus_code_is_generated_from_hierarchy_when_blank(self):
+        root = SyllabusItem.objects.create(
+            competition_discipline=self.link,
+            content="Engenharia de software",
+        )
+        child = SyllabusItem.objects.create(
+            competition_discipline=self.link,
+            parent=root,
+            content="Requisitos de software",
+        )
+        second_child = SyllabusItem.objects.create(
+            competition_discipline=self.link,
+            parent=root,
+            content="Projeto de software",
+        )
+
+        self.assertEqual(root.item_code, "1")
+        self.assertEqual(child.item_code, "1.1")
+        self.assertEqual(second_child.item_code, "1.2")
+
+    def test_syllabus_priority_inherits_from_discipline_when_blank(self):
+        item = SyllabusItem.objects.create(
+            competition_discipline=self.link,
+            content="Engenharia de software",
+            priority=None,
+        )
+
+        self.assertTrue(item.inherits_priority)
+        self.assertEqual(
+            item.effective_priority,
+            CompetitionDiscipline.Priority.P1,
+        )
+
+    def test_saving_item_redirects_to_open_same_discipline(self):
+        response = self.client.post(
+            reverse(
+                "competitions:syllabus_item_add",
+                kwargs={"pk": self.competition.pk, "link_id": self.link.pk},
+            ),
+            {
+                f"syllabus-{self.link.pk}-parent": "",
+                f"syllabus-{self.link.pk}-item_code": "",
+                f"syllabus-{self.link.pk}-content": "Engenharia de software",
+                f"syllabus-{self.link.pk}-priority": "",
+            },
+        )
+
+        expected = (
+            reverse("competitions:detail", kwargs={"pk": self.competition.pk})
+            + f"?edital={self.link.pk}#edital-{self.link.pk}"
+        )
+        self.assertRedirects(response, expected, fetch_redirect_response=False)
+
+        detail_response = self.client.get(
+            reverse("competitions:detail", kwargs={"pk": self.competition.pk}),
+            {"edital": self.link.pk},
+        )
+        self.assertEqual(detail_response.context["open_syllabus_link_id"], self.link.pk)
