@@ -574,3 +574,17 @@ details > summary::-webkit-details-marker {
         grid-template-columns: 1fr;
     }
 }
+
+
+/* Keep compact badges inside summary cards even if broader span rules are cached/applied. */
+.summary-item .priority-pill {
+    display: inline-block;
+    width: fit-content;
+}
+
+.summary-item .estimate-marker {
+    display: inline-flex;
+    width: 1.3rem;
+    min-width: 1.3rem;
+    padding: 0;
+}
