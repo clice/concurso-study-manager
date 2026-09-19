@@ -17,6 +17,11 @@ urlpatterns = [
         name="question_create",
     ),
     path(
+        "<int:pk>/questoes/<int:question_id>/",
+        views.question_detail,
+        name="question_detail",
+    ),
+    path(
         "<int:pk>/questoes/<int:question_id>/editar/",
         views.question_edit,
         name="question_edit",
