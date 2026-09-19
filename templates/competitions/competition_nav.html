@@ -1,0 +1,14 @@
+<nav class="competition-nav mb-4" aria-label="Navegação do concurso">
+    <a class="competition-nav-link {% if active_tab == 'overview' %}active{% endif %}" href="{% url 'competitions:detail' competition.pk %}">
+        Visão geral
+    </a>
+    <a class="competition-nav-link {% if active_tab == 'lessons' %}active{% endif %}" href="{% url 'competitions:lessons' competition.pk %}">
+        Aulas
+    </a>
+    <a class="competition-nav-link {% if active_tab == 'syllabus' %}active{% endif %}" href="{% url 'competitions:syllabus' competition.pk %}">
+        Edital
+    </a>
+    <a class="competition-nav-link {% if active_tab == 'dashboard' %}active{% endif %}" href="{% url 'competitions:dashboard' competition.pk %}">
+        Dashboard
+    </a>
+</nav>

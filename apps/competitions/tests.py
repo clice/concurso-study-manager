@@ -301,9 +301,8 @@ class CompetitionRegistrationTests(TestCase):
             reverse("competitions:detail", kwargs={"pk": self.competition.pk})
         )
 
-        self.assertContains(response, "indica que o número de questões é uma estimativa")
+        self.assertContains(response, "indica quantidade estimada de questões")
         self.assertContains(response, 'aria-label="Estimativa"', count=1)
-        self.assertContains(response, 'aria-label="O total inclui estimativas"', count=1)
         self.assertEqual(response.context["total_questions"], 30)
         self.assertEqual(response.context["total_max_score"], Decimal("57"))
 
@@ -369,8 +368,8 @@ class SyllabusItemTests(TestCase):
 
     def test_syllabus_item_form_only_exposes_parent_and_content(self):
         response = self.client.get(
-            reverse("competitions:detail", kwargs={"pk": self.competition.pk}),
-            {"edital": self.link.pk},
+            reverse("competitions:syllabus", kwargs={"pk": self.competition.pk}),
+            {"disciplina": self.link.pk},
         )
 
         block = response.context["syllabus_blocks"][0]
@@ -469,7 +468,7 @@ class SyllabusItemTests(TestCase):
         self.assertEqual(second.position, 1)
         self.assertEqual(first.position, 2)
 
-    def test_competition_detail_groups_syllabus_by_discipline(self):
+    def test_syllabus_page_groups_items_by_discipline(self):
         parent = SyllabusItem.objects.create(
             competition_discipline=self.link,
             content="Testes de software",
@@ -481,7 +480,7 @@ class SyllabusItemTests(TestCase):
         )
 
         response = self.client.get(
-            reverse("competitions:detail", kwargs={"pk": self.competition.pk})
+            reverse("competitions:syllabus", kwargs={"pk": self.competition.pk})
         )
 
         self.assertEqual(response.status_code, 200)
@@ -526,14 +525,14 @@ class SyllabusItemTests(TestCase):
         )
 
         expected = (
-            reverse("competitions:detail", kwargs={"pk": self.competition.pk})
-            + f"?edital={self.link.pk}#edital-{self.link.pk}"
+            reverse("competitions:syllabus", kwargs={"pk": self.competition.pk})
+            + f"?disciplina={self.link.pk}#edital-{self.link.pk}"
         )
         self.assertRedirects(response, expected, fetch_redirect_response=False)
 
         detail_response = self.client.get(
-            reverse("competitions:detail", kwargs={"pk": self.competition.pk}),
-            {"edital": self.link.pk},
+            reverse("competitions:syllabus", kwargs={"pk": self.competition.pk}),
+            {"disciplina": self.link.pk},
         )
         self.assertEqual(detail_response.context["open_syllabus_link_id"], self.link.pk)
 
@@ -632,3 +631,93 @@ class DataprevSyllabusImportTests(TestCase):
                 competition_discipline__competition=self.competition
             ).exists()
         )
+
+
+
+class CompetitionNavigationTests(TestCase):
+    def setUp(self):
+        board, _ = ExamBoard.objects.get_or_create(
+            acronym="FGV",
+            defaults={"name": "Fundação Getulio Vargas"},
+        )
+        self.competition = Competition.objects.create(
+            name="DATAPREV 2026",
+            organization="DATAPREV",
+            role="ATI — Desenvolvimento de Software",
+            board=board,
+            status=Competition.Status.ACTIVE,
+        )
+        discipline = Discipline.objects.create(name="Desenvolvimento de Sistemas")
+        self.link = CompetitionDiscipline.objects.create(
+            competition=self.competition,
+            discipline=discipline,
+            knowledge_area=CompetitionDiscipline.KnowledgeArea.SPECIFIC,
+            priority=CompetitionDiscipline.Priority.P1,
+            expected_questions=18,
+            question_count_kind=CompetitionDiscipline.QuestionCountKind.ESTIMATED,
+            weight=Decimal("2.50"),
+        )
+        SyllabusItem.objects.create(
+            competition_discipline=self.link,
+            content="Desenvolvimento de sistemas.",
+        )
+
+    def test_overview_is_compact_and_links_to_main_sections(self):
+        response = self.client.get(
+            reverse("competitions:detail", kwargs={"pk": self.competition.pk})
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Visão geral")
+        self.assertContains(response, "Aulas")
+        self.assertContains(response, "Edital")
+        self.assertContains(response, "Dashboard")
+        self.assertContains(response, "Gerenciar disciplinas")
+        self.assertContains(response, "Desenvolvimento de Sistemas")
+        self.assertContains(
+            response,
+            reverse(
+                "competitions:discipline_detail",
+                kwargs={"pk": self.competition.pk, "link_id": self.link.pk},
+            ),
+        )
+        self.assertNotContains(response, "Adicionar item")
+
+    def test_structure_page_contains_stage_and_discipline_management(self):
+        response = self.client.get(
+            reverse("competitions:structure", kwargs={"pk": self.competition.pk})
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Estrutura do concurso")
+        self.assertContains(response, "Adicionar etapa")
+        self.assertContains(response, "Adicionar disciplina")
+
+    def test_discipline_page_shows_only_its_syllabus(self):
+        response = self.client.get(
+            reverse(
+                "competitions:discipline_detail",
+                kwargs={"pk": self.competition.pk, "link_id": self.link.pk},
+            )
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Desenvolvimento de Sistemas")
+        self.assertContains(response, "Desenvolvimento de sistemas.")
+        self.assertContains(response, "Aulas da disciplina")
+        self.assertContains(response, "Gerenciar edital")
+        self.assertContains(response, 'priority-pill priority-p1')
+        self.assertContains(response, 'estimate-marker ms-1')
+
+    def test_lessons_and_dashboard_have_dedicated_routes(self):
+        lessons = self.client.get(
+            reverse("competitions:lessons", kwargs={"pk": self.competition.pk})
+        )
+        dashboard = self.client.get(
+            reverse("competitions:dashboard", kwargs={"pk": self.competition.pk})
+        )
+
+        self.assertEqual(lessons.status_code, 200)
+        self.assertContains(lessons, "A estrutura de aulas vem agora")
+        self.assertEqual(dashboard.status_code, 200)
+        self.assertContains(dashboard, "Indicadores e gráficos ficarão aqui")

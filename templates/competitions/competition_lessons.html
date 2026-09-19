@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}Aulas | {{ competition.name }}{% endblock %}
+
+{% block content %}
+<div class="page-heading mb-3">
+    <div>
+        <p class="eyebrow mb-1">ESTUDO</p>
+        <h1 class="h2 mb-1">Aulas</h1>
+        <p class="text-body-secondary mb-0">{{ competition.name }}</p>
+    </div>
+    <a class="btn btn-outline-secondary" href="{% url 'competitions:detail' competition.pk %}">Voltar à visão geral</a>
+</div>
+
+{% include "competitions/competition_nav.html" %}
+
+<section class="content-card">
+    <div class="empty-state border-0 p-4">
+        <h2 class="h5">A estrutura de aulas vem agora</h2>
+        <p class="text-body-secondary mb-0">Nesta página ficarão a lista de aulas e os filtros por disciplina, semana, data e status. Primeiro vamos validar manualmente o modelo de uma aula antes de importar o conjunto do Gran.</p>
+    </div>
+</section>
+{% endblock %}

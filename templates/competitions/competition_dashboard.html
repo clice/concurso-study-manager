@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard | {{ competition.name }}{% endblock %}
+
+{% block content %}
+<div class="page-heading mb-3">
+    <div>
+        <p class="eyebrow mb-1">ACOMPANHAMENTO</p>
+        <h1 class="h2 mb-1">Dashboard</h1>
+        <p class="text-body-secondary mb-0">{{ competition.name }}</p>
+    </div>
+    <a class="btn btn-outline-secondary" href="{% url 'competitions:detail' competition.pk %}">Voltar à visão geral</a>
+</div>
+
+{% include "competitions/competition_nav.html" %}
+
+<section class="content-card">
+    <div class="empty-state border-0 p-4">
+        <h2 class="h5">Indicadores e gráficos ficarão aqui</h2>
+        <p class="text-body-secondary mb-0">Vamos construir esta área depois que aulas e registros de estudo estiverem modelados, para os gráficos usarem dados reais do sistema.</p>
+    </div>
+</section>
+{% endblock %}
