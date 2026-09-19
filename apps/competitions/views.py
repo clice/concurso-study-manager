@@ -2,6 +2,7 @@ import json
 
 from django.contrib import messages
 from django.db import IntegrityError, transaction
+from django.db.models import Sum
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -42,6 +43,30 @@ def competition_edit(request, pk):
     )
 
 
+def _competition_detail_context(competition, **extra):
+    discipline_names = Discipline.objects.values_list("name", flat=True).order_by("name")
+    totals = competition.discipline_links.aggregate(
+        total_questions=Sum("expected_questions"),
+        total_max_score=Sum("max_score"),
+    )
+    has_estimates = competition.discipline_links.filter(
+        expected_questions__isnull=False,
+        question_count_kind=CompetitionDiscipline.QuestionCountKind.ESTIMATED,
+    ).exists()
+
+    context = {
+        "competition": competition,
+        "stage_form": CompetitionStageForm(),
+        "discipline_form": CompetitionDisciplineForm(competition=competition),
+        "discipline_names": discipline_names,
+        "total_questions": totals["total_questions"],
+        "total_max_score": totals["total_max_score"],
+        "has_estimates": has_estimates,
+    }
+    context.update(extra)
+    return context
+
+
 def competition_detail(request, pk):
     competition = get_object_or_404(
         Competition.objects.prefetch_related(
@@ -50,16 +75,10 @@ def competition_detail(request, pk):
         ),
         pk=pk,
     )
-    discipline_names = Discipline.objects.values_list("name", flat=True).order_by("name")
     return render(
         request,
         "competitions/competition_detail.html",
-        {
-            "competition": competition,
-            "stage_form": CompetitionStageForm(),
-            "discipline_form": CompetitionDisciplineForm(competition=competition),
-            "discipline_names": discipline_names,
-        },
+        _competition_detail_context(competition),
     )
 
 
@@ -79,12 +98,35 @@ def stage_add(request, pk):
     return render(
         request,
         "competitions/competition_detail.html",
+        _competition_detail_context(
+            competition,
+            stage_form=form,
+            open_section="stages",
+        ),
+    )
+
+
+def stage_edit(request, pk, stage_id):
+    competition = get_object_or_404(Competition, pk=pk)
+    stage = get_object_or_404(
+        CompetitionStage,
+        pk=stage_id,
+        competition=competition,
+    )
+    form = CompetitionStageForm(request.POST or None, instance=stage)
+
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, f'Etapa "{stage.get_stage_type_display()}" atualizada.')
+        return redirect(f'{reverse("competitions:detail", kwargs={"pk": pk})}#etapas')
+
+    return render(
+        request,
+        "competitions/stage_form.html",
         {
             "competition": competition,
-            "stage_form": form,
-            "discipline_form": CompetitionDisciplineForm(competition=competition),
-            "discipline_names": Discipline.objects.values_list("name", flat=True).order_by("name"),
-            "open_section": "stages",
+            "stage": stage,
+            "form": form,
         },
     )
 
@@ -107,12 +149,44 @@ def discipline_add(request, pk):
     return render(
         request,
         "competitions/competition_detail.html",
+        _competition_detail_context(
+            competition,
+            discipline_form=form,
+            open_section="disciplines",
+        ),
+    )
+
+
+def discipline_edit(request, pk, link_id):
+    competition = get_object_or_404(Competition, pk=pk)
+    link = get_object_or_404(
+        CompetitionDiscipline.objects.select_related("discipline"),
+        pk=link_id,
+        competition=competition,
+    )
+    form = CompetitionDisciplineForm(
+        request.POST or None,
+        instance=link,
+        competition=competition,
+    )
+
+    if request.method == "POST" and form.is_valid():
+        try:
+            updated = form.save()
+        except IntegrityError:
+            form.add_error("discipline_name", "Essa disciplina já está associada a este concurso.")
+        else:
+            messages.success(request, f'Disciplina "{updated.discipline.name}" atualizada.')
+            return redirect(f'{reverse("competitions:detail", kwargs={"pk": pk})}#disciplinas')
+
+    return render(
+        request,
+        "competitions/discipline_form.html",
         {
             "competition": competition,
-            "stage_form": CompetitionStageForm(),
-            "discipline_form": form,
+            "link": link,
+            "form": form,
             "discipline_names": Discipline.objects.values_list("name", flat=True).order_by("name"),
-            "open_section": "disciplines",
         },
     )
 
