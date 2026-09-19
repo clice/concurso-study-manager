@@ -205,3 +205,97 @@ class CompetitionRegistrationTests(TestCase):
         second.refresh_from_db()
         self.assertEqual(second.position, 1)
         self.assertEqual(first.position, 2)
+
+
+    def test_stage_can_be_edited_with_nonzero_rule(self):
+        stage = CompetitionStage.objects.create(
+            competition=self.competition,
+            stage_type=CompetitionStage.StageType.OBJECTIVE,
+        )
+
+        response = self.client.post(
+            reverse(
+                "competitions:stage_edit",
+                kwargs={"pk": self.competition.pk, "stage_id": stage.pk},
+            ),
+            {
+                "stage_type": CompetitionStage.StageType.OBJECTIVE,
+                "scheduled_date": "2026-10-11",
+                "scheduled_time": "13:00",
+                "max_score": "115.00",
+                "minimum_score": "57.50",
+                "eliminatory": "on",
+                "classificatory": "on",
+                "requires_nonzero_each_discipline": "on",
+                "details": "",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        stage.refresh_from_db()
+        self.assertEqual(stage.minimum_score, Decimal("57.50"))
+        self.assertTrue(stage.requires_nonzero_each_discipline)
+
+    def test_discipline_can_be_edited_as_estimated(self):
+        discipline = Discipline.objects.create(name="Desenvolvimento de Sistemas")
+        link = CompetitionDiscipline.objects.create(
+            competition=self.competition,
+            discipline=discipline,
+            knowledge_area=CompetitionDiscipline.KnowledgeArea.SPECIFIC,
+            priority=CompetitionDiscipline.Priority.P1,
+        )
+
+        response = self.client.post(
+            reverse(
+                "competitions:discipline_edit",
+                kwargs={"pk": self.competition.pk, "link_id": link.pk},
+            ),
+            {
+                "discipline_name": "Desenvolvimento de Sistemas",
+                "knowledge_area": CompetitionDiscipline.KnowledgeArea.SPECIFIC,
+                "priority": CompetitionDiscipline.Priority.P1,
+                "expected_questions": "18",
+                "question_count_kind": CompetitionDiscipline.QuestionCountKind.ESTIMATED,
+                "weight": "2.50",
+                "max_score": "45.00",
+                "minimum_score": "",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        link.refresh_from_db()
+        self.assertEqual(link.expected_questions, 18)
+        self.assertEqual(
+            link.question_count_kind,
+            CompetitionDiscipline.QuestionCountKind.ESTIMATED,
+        )
+
+    def test_detail_displays_totals_and_estimate_warning(self):
+        portuguese = Discipline.objects.create(name="Língua Portuguesa")
+        systems = Discipline.objects.create(name="Desenvolvimento de Sistemas")
+        CompetitionDiscipline.objects.create(
+            competition=self.competition,
+            discipline=portuguese,
+            knowledge_area=CompetitionDiscipline.KnowledgeArea.GENERAL,
+            expected_questions=12,
+            question_count_kind=CompetitionDiscipline.QuestionCountKind.OFFICIAL,
+            weight=1,
+            max_score=12,
+        )
+        CompetitionDiscipline.objects.create(
+            competition=self.competition,
+            discipline=systems,
+            knowledge_area=CompetitionDiscipline.KnowledgeArea.SPECIFIC,
+            expected_questions=18,
+            question_count_kind=CompetitionDiscipline.QuestionCountKind.ESTIMATED,
+            weight=2.5,
+            max_score=45,
+        )
+
+        response = self.client.get(
+            reverse("competitions:detail", kwargs={"pk": self.competition.pk})
+        )
+
+        self.assertContains(response, "inclui estimativas")
+        self.assertEqual(response.context["total_questions"], 30)
+        self.assertEqual(response.context["total_max_score"], Decimal("57"))
