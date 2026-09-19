@@ -165,6 +165,25 @@ function enableLessonActionPopovers() {
     window.addEventListener("scroll", closeOpenPopovers, true);
 }
 
+
+function enableQuestionBoardOtherField() {
+    const select = document.querySelector("[data-question-board-select]");
+    const wrapper = document.querySelector("[data-question-board-other]");
+    const input = document.querySelector("[data-question-board-other-input]");
+
+    if (!select || !wrapper || !input) return;
+
+    const update = () => {
+        const showOther = select.value === "__other__";
+        wrapper.hidden = !showOther;
+        input.required = showOther;
+        if (!showOther) input.value = "";
+    };
+
+    select.addEventListener("change", update);
+    update();
+}
+
 function enableCollapsibleForms() {
     document.querySelectorAll("[data-collapsible-form]").forEach((details) => {
         updateCollapsibleSummary(details);
@@ -207,4 +226,5 @@ document.addEventListener("DOMContentLoaded", () => {
     enableSortableLists();
     enableCollapsibleForms();
     enableLessonActionPopovers();
+    enableQuestionBoardOtherField();
 });
