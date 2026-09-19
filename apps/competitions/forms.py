@@ -3,7 +3,13 @@ from decimal import Decimal, InvalidOperation
 from django import forms
 from django.db import transaction
 
-from .models import Competition, CompetitionDiscipline, CompetitionStage, Discipline
+from .models import (
+    Competition,
+    CompetitionDiscipline,
+    CompetitionStage,
+    Discipline,
+    normalize_discipline_name,
+)
 
 
 class DateInput(forms.DateInput):
@@ -193,7 +199,8 @@ class CompetitionDisciplineForm(forms.ModelForm):
     @transaction.atomic
     def save(self, commit=True):
         name = self.cleaned_data["discipline_name"]
-        discipline = Discipline.objects.filter(name__iexact=name).first()
+        normalized_name = normalize_discipline_name(name)
+        discipline = Discipline.objects.filter(normalized_name=normalized_name).first()
         if discipline is None:
             discipline = Discipline.objects.create(name=name)
 
