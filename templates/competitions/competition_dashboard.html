@@ -100,7 +100,7 @@
         </div>
     </section>
 
-    <section class="content-card dashboard-chart-card">
+    <section class="content-card dashboard-chart-card dashboard-chart-wide">
         <div class="dashboard-chart-heading">
             <div>
                 <p class="eyebrow mb-1">EDITAL</p>
@@ -166,7 +166,7 @@
                         <td>
                             <div class="dashboard-progress-cell">
                                 <div class="dashboard-progress-track">
-                                    <span style="width: {{ row.lesson_progress|stringformat:'s' }}%"></span>
+                                    <span style="width: {% widthratio row.lesson_progress 100 100 %}%"></span>
                                 </div>
                                 <strong>{{ row.lesson_progress|floatformat:"-1" }}%</strong>
                             </div>
