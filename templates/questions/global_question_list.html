@@ -166,7 +166,7 @@
         </div>
 
         <div class="question-pagination-summary mt-3">
-            Mostrando {{ page_obj.start_index }}–{{ page_obj.end_index }} de {{ page_obj.paginator.count }} questão{{ page_obj.paginator.count|pluralize:"ões" }}.
+            Mostrando {{ page_obj.start_index }}–{{ page_obj.end_index }} de {{ page_obj.paginator.count }} {% if page_obj.paginator.count == 1 %}questão{% else %}questões{% endif %}.
         </div>
 
         {% if page_obj.paginator.num_pages > 1 %}
