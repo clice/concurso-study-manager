@@ -1,5 +1,12 @@
+import unicodedata
+
 from django.db import models
 from django.db.models import Max
+
+
+def normalize_discipline_name(value):
+    normalized = unicodedata.normalize("NFKC", value or "")
+    return " ".join(normalized.split()).casefold()
 
 
 class ExamBoard(models.Model):
@@ -17,11 +24,17 @@ class ExamBoard(models.Model):
 
 class Discipline(models.Model):
     name = models.CharField(max_length=160, unique=True)
+    normalized_name = models.CharField(max_length=160, unique=True, editable=False)
 
     class Meta:
         ordering = ["name"]
         verbose_name = "disciplina"
         verbose_name_plural = "disciplinas"
+
+    def save(self, *args, **kwargs):
+        self.name = " ".join(self.name.split())
+        self.normalized_name = normalize_discipline_name(self.name)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name
