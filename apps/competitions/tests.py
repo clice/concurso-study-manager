@@ -327,6 +327,7 @@ class CompetitionRegistrationTests(TestCase):
 
 
 
+
 class SyllabusItemTests(TestCase):
     def setUp(self):
         board, _ = ExamBoard.objects.get_or_create(
@@ -353,35 +354,40 @@ class SyllabusItemTests(TestCase):
             competition_discipline=self.link,
             item_code="1",
             content="Engenharia de software",
-            priority=CompetitionDiscipline.Priority.P1,
         )
         second = SyllabusItem.objects.create(
             competition_discipline=self.link,
             item_code="2",
             content="Testes de software",
-            priority=CompetitionDiscipline.Priority.P1,
         )
 
         self.assertEqual(first.position, 1)
         self.assertEqual(second.position, 2)
 
-    def test_syllabus_item_can_be_added_from_discipline_block(self):
+    def test_syllabus_item_form_only_exposes_parent_and_content(self):
+        response = self.client.get(
+            reverse("competitions:detail", kwargs={"pk": self.competition.pk}),
+            {"edital": self.link.pk},
+        )
+
+        block = response.context["syllabus_blocks"][0]
+        self.assertEqual(list(block["form"].fields), ["parent", "content"])
+
+    def test_syllabus_item_can_be_added_with_automatic_code(self):
         response = self.client.post(
             reverse(
                 "competitions:syllabus_item_add",
                 kwargs={"pk": self.competition.pk, "link_id": self.link.pk},
             ),
             {
-                f"syllabus-{self.link.pk}-item_code": "3.1",
-                f"syllabus-{self.link.pk}-content": "Testes unitários",
-                f"syllabus-{self.link.pk}-priority": CompetitionDiscipline.Priority.P1,
                 f"syllabus-{self.link.pk}-parent": "",
+                f"syllabus-{self.link.pk}-content": "Testes unitários",
             },
         )
 
         self.assertEqual(response.status_code, 302)
         item = SyllabusItem.objects.get()
-        self.assertEqual(item.item_code, "3.1")
+        self.assertEqual(item.item_code, "1")
         self.assertEqual(item.content, "Testes unitários")
         self.assertEqual(item.competition_discipline, self.link)
 
@@ -394,7 +400,6 @@ class SyllabusItemTests(TestCase):
         )
         foreign_parent = SyllabusItem.objects.create(
             competition_discipline=other_link,
-            item_code="1",
             content="Modelo relacional",
         )
 
@@ -404,10 +409,8 @@ class SyllabusItemTests(TestCase):
                 kwargs={"pk": self.competition.pk, "link_id": self.link.pk},
             ),
             {
-                f"syllabus-{self.link.pk}-item_code": "1.1",
-                f"syllabus-{self.link.pk}-content": "Subitem inválido",
-                f"syllabus-{self.link.pk}-priority": CompetitionDiscipline.Priority.P2,
                 f"syllabus-{self.link.pk}-parent": str(foreign_parent.pk),
+                f"syllabus-{self.link.pk}-content": "Subitem inválido",
             },
         )
 
@@ -420,9 +423,7 @@ class SyllabusItemTests(TestCase):
     def test_syllabus_item_can_be_edited(self):
         item = SyllabusItem.objects.create(
             competition_discipline=self.link,
-            item_code="1",
             content="Conteúdo inicial",
-            priority=CompetitionDiscipline.Priority.P2,
         )
 
         response = self.client.post(
@@ -431,28 +432,22 @@ class SyllabusItemTests(TestCase):
                 kwargs={"pk": self.competition.pk, "item_id": item.pk},
             ),
             {
-                "item_code": "1.1",
-                "content": "Conteúdo atualizado",
-                "priority": CompetitionDiscipline.Priority.P1,
                 "parent": "",
+                "content": "Conteúdo atualizado",
             },
         )
 
         self.assertEqual(response.status_code, 302)
         item.refresh_from_db()
-        self.assertEqual(item.item_code, "1.1")
         self.assertEqual(item.content, "Conteúdo atualizado")
-        self.assertEqual(item.priority, CompetitionDiscipline.Priority.P1)
 
     def test_syllabus_items_can_be_reordered(self):
         first = SyllabusItem.objects.create(
             competition_discipline=self.link,
-            item_code="1",
             content="Primeiro",
         )
         second = SyllabusItem.objects.create(
             competition_discipline=self.link,
-            item_code="2",
             content="Segundo",
         )
 
@@ -474,15 +469,11 @@ class SyllabusItemTests(TestCase):
     def test_competition_detail_groups_syllabus_by_discipline(self):
         parent = SyllabusItem.objects.create(
             competition_discipline=self.link,
-            item_code="4",
             content="Testes de software",
-            priority=CompetitionDiscipline.Priority.P1,
         )
         SyllabusItem.objects.create(
             competition_discipline=self.link,
-            item_code="4.1",
             content="Testes unitários",
-            priority=CompetitionDiscipline.Priority.P1,
             parent=parent,
         )
 
@@ -493,13 +484,13 @@ class SyllabusItemTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Edital verticalizado")
         self.assertContains(response, "Desenvolvimento de Sistemas")
-        self.assertContains(response, "4.1")
-        self.assertContains(response, "subitem de 4")
+        self.assertContains(response, "1.1")
+        self.assertContains(response, "subitem de 1")
+        self.assertContains(response, "Conhecimentos Específicos · P1")
         self.assertEqual(response.context["total_syllabus_items"], 2)
         self.assertEqual(response.context["syllabus_discipline_count"], 1)
 
-
-    def test_syllabus_code_is_generated_from_hierarchy_when_blank(self):
+    def test_syllabus_code_is_generated_from_hierarchy(self):
         root = SyllabusItem.objects.create(
             competition_discipline=self.link,
             content="Engenharia de software",
@@ -519,19 +510,6 @@ class SyllabusItemTests(TestCase):
         self.assertEqual(child.item_code, "1.1")
         self.assertEqual(second_child.item_code, "1.2")
 
-    def test_syllabus_priority_inherits_from_discipline_when_blank(self):
-        item = SyllabusItem.objects.create(
-            competition_discipline=self.link,
-            content="Engenharia de software",
-            priority=None,
-        )
-
-        self.assertTrue(item.inherits_priority)
-        self.assertEqual(
-            item.effective_priority,
-            CompetitionDiscipline.Priority.P1,
-        )
-
     def test_saving_item_redirects_to_open_same_discipline(self):
         response = self.client.post(
             reverse(
@@ -540,9 +518,7 @@ class SyllabusItemTests(TestCase):
             ),
             {
                 f"syllabus-{self.link.pk}-parent": "",
-                f"syllabus-{self.link.pk}-item_code": "",
                 f"syllabus-{self.link.pk}-content": "Engenharia de software",
-                f"syllabus-{self.link.pk}-priority": "",
             },
         )
 
