@@ -11,13 +11,16 @@ from .models import Lesson
 
 def lesson_list(request, pk):
     competition = get_object_or_404(Competition, pk=pk)
+    discipline_links = list(
+        competition.discipline_links.select_related("discipline")
+        .order_by("position", "discipline__name")
+    )
 
     lessons = (
         Lesson.objects.filter(
             competition_discipline__competition=competition
         )
         .select_related("competition_discipline__discipline")
-        .prefetch_related("syllabus_items")
         .order_by(
             "competition_discipline__position",
             "position",
@@ -31,8 +34,20 @@ def lesson_list(request, pk):
     status = request.GET.get("status", "").strip()
     query = request.GET.get("q", "").strip()
 
+    selected_discipline_link = None
     if discipline_id.isdigit():
-        lessons = lessons.filter(competition_discipline_id=int(discipline_id))
+        selected_discipline_link = next(
+            (
+                link
+                for link in discipline_links
+                if link.pk == int(discipline_id)
+            ),
+            None,
+        )
+        if selected_discipline_link:
+            lessons = lessons.filter(
+                competition_discipline=selected_discipline_link
+            )
 
     if week.isdigit():
         lessons = lessons.filter(suggested_week=int(week))
@@ -82,9 +97,8 @@ def lesson_list(request, pk):
             "competition": competition,
             "active_tab": "lessons",
             "lessons": lessons,
-            "discipline_links": competition.discipline_links.select_related(
-                "discipline"
-            ).order_by("position", "discipline__name"),
+            "discipline_links": discipline_links,
+            "selected_discipline_link": selected_discipline_link,
             "weeks": weeks,
             "status_choices": Lesson.Status.choices,
             "filters": {
@@ -102,23 +116,34 @@ def lesson_list(request, pk):
     )
 
 
-def lesson_create(request, pk):
+def lesson_choose_discipline(request, pk):
     competition = get_object_or_404(Competition, pk=pk)
-    initial = {}
+    discipline_links = list(
+        competition.discipline_links.select_related("discipline")
+        .order_by("position", "discipline__name")
+    )
+    return render(
+        request,
+        "studies/lesson_choose_discipline.html",
+        {
+            "competition": competition,
+            "active_tab": "lessons",
+            "discipline_links": discipline_links,
+        },
+    )
 
-    discipline_id = request.GET.get("disciplina", "").strip()
-    if discipline_id.isdigit():
-        discipline_link = CompetitionDiscipline.objects.filter(
-            pk=int(discipline_id),
-            competition=competition,
-        ).first()
-        if discipline_link:
-            initial["competition_discipline"] = discipline_link
+
+def lesson_create(request, pk, link_id):
+    competition = get_object_or_404(Competition, pk=pk)
+    discipline_link = get_object_or_404(
+        CompetitionDiscipline.objects.select_related("discipline"),
+        pk=link_id,
+        competition=competition,
+    )
 
     form = LessonForm(
         request.POST or None,
-        competition=competition,
-        initial=initial,
+        discipline_link=discipline_link,
     )
 
     if request.method == "POST" and form.is_valid():
@@ -133,6 +158,7 @@ def lesson_create(request, pk):
         "studies/lesson_form.html",
         {
             "competition": competition,
+            "discipline_link": discipline_link,
             "form": form,
             "page_title": "Nova aula",
             "submit_label": "Salvar aula",
@@ -147,10 +173,11 @@ def lesson_edit(request, pk, lesson_id):
         pk=lesson_id,
         competition_discipline__competition=competition,
     )
+    discipline_link = lesson.competition_discipline
     form = LessonForm(
         request.POST or None,
         instance=lesson,
-        competition=competition,
+        discipline_link=discipline_link,
     )
 
     if request.method == "POST" and form.is_valid():
@@ -165,9 +192,10 @@ def lesson_edit(request, pk, lesson_id):
         "studies/lesson_form.html",
         {
             "competition": competition,
+            "discipline_link": discipline_link,
             "lesson": lesson,
             "form": form,
-            "page_title": f"Editar {lesson.code or 'aula'}",
+            "page_title": f"Editar {lesson.code}",
             "submit_label": "Salvar alterações",
         },
     )
