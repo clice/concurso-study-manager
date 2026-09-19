@@ -1,0 +1,24 @@
+from django.urls import path
+
+from . import views
+
+app_name = "questions"
+
+urlpatterns = [
+    path("<int:pk>/questoes/", views.question_list, name="question_list"),
+    path(
+        "<int:pk>/questoes/nova/",
+        views.question_choose_discipline,
+        name="question_choose_discipline",
+    ),
+    path(
+        "<int:pk>/disciplinas/<int:link_id>/questoes/nova/",
+        views.question_create,
+        name="question_create",
+    ),
+    path(
+        "<int:pk>/questoes/<int:question_id>/editar/",
+        views.question_edit,
+        name="question_edit",
+    ),
+]
