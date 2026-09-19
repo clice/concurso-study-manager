@@ -106,20 +106,52 @@ function updateCollapsibleSummary(details) {
     summary.classList.toggle("btn-outline-secondary", details.open);
 }
 
+function positionLessonActionPopover(popover) {
+    const button = document.querySelector(
+        `[popovertarget="${popover.id}"]`
+    );
+    if (!button) return;
+
+    const gap = 8;
+    const viewportPadding = 12;
+    const buttonRect = button.getBoundingClientRect();
+
+    popover.style.left = "0px";
+    popover.style.top = "0px";
+    popover.style.maxHeight = `${Math.max(120, window.innerHeight - viewportPadding * 2)}px`;
+
+    const popoverRect = popover.getBoundingClientRect();
+    const roomBelow = window.innerHeight - buttonRect.bottom - viewportPadding;
+    const roomAbove = buttonRect.top - viewportPadding;
+    const openAbove = roomBelow < popoverRect.height + gap && roomAbove > roomBelow;
+
+    let top = openAbove
+        ? buttonRect.top - popoverRect.height - gap
+        : buttonRect.bottom + gap;
+
+    top = Math.max(
+        viewportPadding,
+        Math.min(top, window.innerHeight - popoverRect.height - viewportPadding)
+    );
+
+    let left = buttonRect.right - popoverRect.width;
+    left = Math.max(
+        viewportPadding,
+        Math.min(left, window.innerWidth - popoverRect.width - viewportPadding)
+    );
+
+    popover.style.left = `${left}px`;
+    popover.style.top = `${top}px`;
+}
+
 function enableLessonActionPopovers() {
     document.querySelectorAll("[data-lesson-popover]").forEach((popover) => {
-        popover.addEventListener("beforetoggle", (event) => {
+        popover.addEventListener("toggle", (event) => {
             if (event.newState !== "open") return;
 
-            const button = document.querySelector(
-                `[popovertarget="${popover.id}"]`
-            );
-            if (!button) return;
-
-            const rect = button.getBoundingClientRect();
-            popover.style.left = `${rect.right}px`;
-            popover.style.top = `${rect.bottom + 6}px`;
-            popover.style.transform = "translateX(-100%)";
+            window.requestAnimationFrame(() => {
+                positionLessonActionPopover(popover);
+            });
         });
     });
 
