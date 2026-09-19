@@ -1,0 +1,29 @@
+services:
+  web:
+    build:
+      context: .
+    image: concurso-study-manager:local
+    container_name: concurso-study-manager
+    init: true
+    environment:
+      DJANGO_SECRET_KEY: "${DJANGO_SECRET_KEY:-unsafe-local-development-key}"
+      DJANGO_DEBUG: "${DJANGO_DEBUG:-1}"
+      DJANGO_ALLOWED_HOSTS: "${DJANGO_ALLOWED_HOSTS:-127.0.0.1,localhost}"
+      DJANGO_DB_PATH: /data/db.sqlite3
+    ports:
+      - "8000:8000"
+    volumes:
+      - concurso_study_data:/data
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/', timeout=3)"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  concurso_study_data:

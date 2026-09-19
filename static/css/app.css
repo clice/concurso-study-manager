@@ -1,0 +1,61 @@
+:root {
+    --surface: #ffffff;
+    --page: #f6f8fb;
+    --ink: #1f2937;
+    --muted: #6b7280;
+    --line: #e5e7eb;
+    --accent: #315a8a;
+}
+
+body {
+    background: var(--page);
+    color: var(--ink);
+}
+
+.brand {
+    color: var(--ink);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+.eyebrow {
+    color: var(--accent);
+    font-size: .75rem;
+    font-weight: 800;
+    letter-spacing: .12em;
+}
+
+.metric-card,
+.competition-card,
+.empty-state {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 1rem;
+}
+
+.metric-card {
+    min-width: 180px;
+    padding: .9rem 1.1rem;
+}
+
+.metric-label {
+    display: block;
+    color: var(--muted);
+    font-size: .78rem;
+}
+
+.metric-value {
+    display: block;
+    margin-top: .15rem;
+    font-size: 1.8rem;
+}
+
+.competition-card {
+    padding: 1.25rem;
+    box-shadow: 0 8px 24px rgba(31, 41, 55, .04);
+}
+
+.empty-state {
+    padding: 2rem;
+    text-align: center;
+}

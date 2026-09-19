@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Painel | Concurso Study Manager{% endblock %}
+
+{% block content %}
+<section class="mb-4">
+    <p class="eyebrow mb-1">PAINEL GERAL</p>
+    <div class="d-flex flex-wrap align-items-end justify-content-between gap-3">
+        <div>
+            <h1 class="display-6 mb-1">Seus concursos</h1>
+            <p class="text-body-secondary mb-0">Acompanhe cronograma, questões, revisões e progresso em um só lugar.</p>
+        </div>
+        <div class="metric-card">
+            <span class="metric-label">Concursos cadastrados</span>
+            <strong class="metric-value">{{ competition_count }}</strong>
+        </div>
+    </div>
+</section>
+
+<div class="row g-3">
+    {% for competition in competitions %}
+        <div class="col-12 col-lg-6">
+            <article class="competition-card h-100">
+                <div class="d-flex justify-content-between gap-3">
+                    <div>
+                        <span class="badge text-bg-light border mb-2">{{ competition.get_status_display }}</span>
+                        <h2 class="h4 mb-1">{{ competition.organization }}</h2>
+                        <p class="mb-2">{{ competition.role }}</p>
+                    </div>
+                    {% if competition.exam_date %}
+                        <div class="text-end">
+                            <span class="small text-body-secondary d-block">Prova</span>
+                            <strong>{{ competition.exam_date|date:"d/m/Y" }}</strong>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="small text-body-secondary mt-3">
+                    {% if competition.board %}Banca: {{ competition.board }}{% else %}Banca não informada{% endif %}
+                </div>
+            </article>
+        </div>
+    {% empty %}
+        <div class="col-12">
+            <div class="empty-state">
+                <h2 class="h5">Nenhum concurso cadastrado ainda</h2>
+                <p class="text-body-secondary mb-0">O primeiro conjunto real será o DATAPREV 2026.</p>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}
