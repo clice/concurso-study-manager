@@ -106,6 +106,26 @@ function updateCollapsibleSummary(details) {
     summary.classList.toggle("btn-outline-secondary", details.open);
 }
 
+function enableLessonActions() {
+    const menus = Array.from(document.querySelectorAll("[data-lesson-actions]"));
+
+    menus.forEach((menu) => {
+        menu.addEventListener("toggle", () => {
+            if (!menu.open) return;
+
+            menus.forEach((other) => {
+                if (other !== menu) other.removeAttribute("open");
+            });
+        });
+    });
+
+    document.addEventListener("click", (event) => {
+        if (event.target.closest("[data-lesson-actions]")) return;
+
+        menus.forEach((menu) => menu.removeAttribute("open"));
+    });
+}
+
 function enableCollapsibleForms() {
     document.querySelectorAll("[data-collapsible-form]").forEach((details) => {
         updateCollapsibleSummary(details);
@@ -147,4 +167,5 @@ document.addEventListener("DOMContentLoaded", () => {
 
     enableSortableLists();
     enableCollapsibleForms();
+    enableLessonActions();
 });
