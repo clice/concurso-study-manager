@@ -8,6 +8,7 @@ from .models import (
     CompetitionDiscipline,
     CompetitionStage,
     Discipline,
+    SyllabusItem,
     normalize_discipline_name,
 )
 
@@ -207,6 +208,68 @@ class CompetitionDisciplineForm(forms.ModelForm):
         instance = super().save(commit=False)
         instance.competition = self.competition
         instance.discipline = discipline
+        if commit:
+            instance.save()
+        return instance
+
+
+
+class SyllabusItemForm(forms.ModelForm):
+    class Meta:
+        model = SyllabusItem
+        fields = [
+            "item_code",
+            "content",
+            "priority",
+            "parent",
+        ]
+        widgets = {
+            "content": forms.Textarea(
+                attrs={
+                    "rows": 3,
+                    "placeholder": "Transcreva o conteúdo exatamente como aparece no edital.",
+                }
+            ),
+        }
+        labels = {
+            "item_code": "Item / código",
+            "parent": "Item-pai (opcional)",
+        }
+
+    def __init__(self, *args, discipline_link=None, **kwargs):
+        self.discipline_link = discipline_link
+        super().__init__(*args, **kwargs)
+
+        self.fields["parent"].queryset = SyllabusItem.objects.none()
+        if discipline_link:
+            parent_queryset = discipline_link.syllabus_items.order_by("position")
+            if self.instance and self.instance.pk:
+                parent_queryset = parent_queryset.exclude(pk=self.instance.pk)
+            self.fields["parent"].queryset = parent_queryset
+            self.fields["priority"].initial = (
+                self.instance.priority
+                if self.instance and self.instance.pk
+                else discipline_link.priority
+            )
+
+        for name, field in self.fields.items():
+            if name in {"priority", "parent"}:
+                field.widget.attrs["class"] = "form-select"
+            else:
+                field.widget.attrs.setdefault("class", "form-control")
+
+    def clean_parent(self):
+        parent = self.cleaned_data.get("parent")
+        if parent and self.discipline_link:
+            if parent.competition_discipline_id != self.discipline_link.id:
+                raise forms.ValidationError(
+                    "O item-pai precisa pertencer à mesma disciplina."
+                )
+        return parent
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        instance.competition_discipline = self.discipline_link
         if commit:
             instance.save()
         return instance
