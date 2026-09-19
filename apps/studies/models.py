@@ -19,9 +19,10 @@ class Lesson(models.Model):
     )
     code = models.CharField(
         "código",
-        max_length=40,
+        max_length=20,
+        unique=True,
+        editable=False,
         blank=True,
-        help_text="Identificador da aula no curso, por exemplo G588.",
     )
     title = models.CharField("título", max_length=300)
     macrotheme = models.CharField("macrotema", max_length=220, blank=True)
@@ -74,15 +75,19 @@ class Lesson(models.Model):
             "position",
             "id",
         ]
-        constraints = [
-            models.UniqueConstraint(
-                fields=["competition_discipline", "code"],
-                condition=~models.Q(code=""),
-                name="unique_lesson_code_per_competition_discipline",
-            )
-        ]
         verbose_name = "aula"
         verbose_name_plural = "aulas"
+
+    @classmethod
+    def next_code(cls):
+        highest = 0
+        for code in cls.objects.exclude(code="").values_list("code", flat=True):
+            if not code or not code.startswith("G"):
+                continue
+            numeric = code[1:]
+            if numeric.isdigit():
+                highest = max(highest, int(numeric))
+        return f"G{highest + 1:04d}"
 
     @property
     def accuracy(self):
@@ -108,6 +113,9 @@ class Lesson(models.Model):
             )
 
     def save(self, *args, **kwargs):
+        if not self.code:
+            self.code = self.next_code()
+
         if not self.position and self.competition_discipline_id:
             current_max = (
                 Lesson.objects.filter(
