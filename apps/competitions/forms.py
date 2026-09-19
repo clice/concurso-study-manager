@@ -164,7 +164,7 @@ class CompetitionDisciplineForm(forms.ModelForm):
             "minimum_score",
         ]
         labels = {
-            "question_count_kind": "Número de questões",
+            "question_count_kind": "Origem do nº de questões",
         }
         help_texts = {
             "question_count_kind": "Marque como estimativa quando a distribuição não vier oficialmente no edital.",
