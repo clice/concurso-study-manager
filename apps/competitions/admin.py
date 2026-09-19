@@ -6,6 +6,7 @@ from .models import (
     CompetitionStage,
     Discipline,
     ExamBoard,
+    SyllabusItem,
 )
 
 
@@ -42,3 +43,21 @@ class ExamBoardAdmin(admin.ModelAdmin):
 @admin.register(Discipline)
 class DisciplineAdmin(admin.ModelAdmin):
     search_fields = ("name",)
+
+
+
+@admin.register(SyllabusItem)
+class SyllabusItemAdmin(admin.ModelAdmin):
+    list_display = (
+        "competition_discipline",
+        "position",
+        "item_code",
+        "priority",
+        "parent",
+    )
+    list_filter = ("priority", "competition_discipline__competition")
+    search_fields = (
+        "item_code",
+        "content",
+        "competition_discipline__discipline__name",
+    )
