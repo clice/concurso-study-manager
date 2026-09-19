@@ -218,7 +218,7 @@
         <div>
             <p class="eyebrow mb-1">CONTEÚDO PROGRAMÁTICO</p>
             <h2 class="h4 mb-1">Edital verticalizado</h2>
-            <p class="text-body-secondary small mb-0">Organize os itens oficiais por disciplina. Mais adiante, as aulas e materiais poderão ser vinculados a estes itens.</p>
+            <p class="text-body-secondary small mb-0">Organize os itens oficiais por disciplina. A numeração é gerada automaticamente e a prioridade é herdada da disciplina.</p>
         </div>
         <div class="syllabus-metrics">
             <span><strong>{{ syllabus_discipline_count }}</strong> disciplinas</span>
@@ -253,7 +253,6 @@
                                         <tr>
                                             <th>Item</th>
                                             <th>Conteúdo do edital</th>
-                                            <th>Prioridade</th>
                                             <th></th>
                                         </tr>
                                     </thead>
@@ -288,12 +287,6 @@
                                                     </div>
                                                 </td>
                                                 <td>{{ item.content }}</td>
-                                                <td>
-                                                    <span
-    class="priority-pill priority-{{ item.effective_priority|lower }}"
-    {% if item.inherits_priority %}title="Prioridade herdada da disciplina"{% endif %}
->{{ item.effective_priority }}</span>
-                                                </td>
                                                 <td class="text-end">
                                                     <a
                                                         class="btn btn-sm btn-outline-secondary"
@@ -323,16 +316,10 @@
                             >
                                 {% csrf_token %}
                                 <div class="row g-3">
-                                    <div class="col-12 col-md-5">
+                                    <div class="col-12 col-md-4">
                                         {% include "competitions/field.html" with field=block.form.parent %}
                                     </div>
-                                    <div class="col-12 col-md-3">
-                                        {% include "competitions/field.html" with field=block.form.item_code %}
-                                    </div>
-                                    <div class="col-12 col-md-4">
-                                        {% include "competitions/field.html" with field=block.form.priority %}
-                                    </div>
-                                    <div class="col-12">
+                                    <div class="col-12 col-md-8">
                                         {% include "competitions/field.html" with field=block.form.content %}
                                     </div>
                                 </div>
