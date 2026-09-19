@@ -9,13 +9,23 @@
 </head>
 <body>
     <header class="border-bottom bg-white">
-        <div class="container py-3 d-flex align-items-center justify-content-between">
+        <div class="container py-3 d-flex align-items-center justify-content-between gap-3">
             <a class="brand text-decoration-none" href="/">Concurso Study Manager</a>
-            <span class="text-body-secondary small">Ambiente local</span>
+            <nav class="d-flex align-items-center gap-3">
+                <a class="small text-decoration-none text-body-secondary" href="/">Painel</a>
+                <a class="btn btn-sm btn-primary" href="{% url 'competitions:create' %}">Novo concurso</a>
+            </nav>
         </div>
     </header>
 
     <main class="container py-4">
+        {% if messages %}
+            <div class="mb-4">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags|default:'info' }} mb-2" role="alert">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
         {% block content %}{% endblock %}
     </main>
 </body>
