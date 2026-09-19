@@ -112,6 +112,9 @@ class CompetitionStage(models.Model):
     minimum_score = models.DecimalField(
         "pontuação mínima", max_digits=8, decimal_places=2, null=True, blank=True
     )
+    requires_nonzero_each_discipline = models.BooleanField(
+        "não pode zerar disciplina", default=False
+    )
     details = models.TextField("detalhes / critérios", blank=True)
 
     class Meta:
@@ -144,6 +147,10 @@ class CompetitionDiscipline(models.Model):
         P2 = "P2", "P2"
         P3 = "P3", "P3"
 
+    class QuestionCountKind(models.TextChoices):
+        OFFICIAL = "official", "Oficial"
+        ESTIMATED = "estimated", "Estimativa"
+
     competition = models.ForeignKey(
         Competition, on_delete=models.CASCADE, related_name="discipline_links"
     )
@@ -156,6 +163,12 @@ class CompetitionDiscipline(models.Model):
     )
     expected_questions = models.PositiveIntegerField(
         "número de questões", null=True, blank=True
+    )
+    question_count_kind = models.CharField(
+        "origem do número de questões",
+        max_length=12,
+        choices=QuestionCountKind.choices,
+        default=QuestionCountKind.OFFICIAL,
     )
     weight = models.DecimalField(
         "peso", max_digits=5, decimal_places=2, null=True, blank=True
