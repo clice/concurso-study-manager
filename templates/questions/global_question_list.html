@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block title %}Questões gerais | Concurso Study Manager{% endblock %}
+
+{% block content %}
+<div class="page-heading mb-3">
+    <div>
+        <p class="eyebrow mb-1">HISTÓRICO GERAL</p>
+        <h1 class="h2 mb-1">Questões</h1>
+        <p class="text-body-secondary mb-0">Acompanhe as questões respondidas em todos os concursos.</p>
+    </div>
+    <a class="btn btn-primary" href="{% url 'questions_global:choose_competition' %}">Adicionar questão</a>
+</div>
+
+{% include "questions/global_question_nav.html" %}
+
+<div class="question-metrics question-metrics-global mb-4">
+    <div class="summary-item"><span>Questões exibidas</span><strong>{{ metrics.total|default:0 }}</strong></div>
+    <div class="summary-item"><span>Acertos</span><strong>{{ metrics.correct|default:0 }}</strong></div>
+    <div class="summary-item"><span>Erros</span><strong>{{ metrics.incorrect|default:0 }}</strong></div>
+    <div class="summary-item"><span>% de acerto</span><strong>{% if metrics.accuracy is not None %}{{ metrics.accuracy|floatformat:"-1" }}%{% else %}—{% endif %}</strong></div>
+    <div class="summary-item"><span>Revisões pendentes</span><strong>{{ metrics.pending_reviews|default:0 }}</strong></div>
+</div>
+
+<section class="content-card">
+    <div class="content-card-header mb-3">
+        <div>
+            <p class="eyebrow mb-1">TODOS OS CONCURSOS</p>
+            <h2 class="h4 mb-1">Histórico de questões</h2>
+            <p class="text-body-secondary small mb-0">Use os filtros para comparar períodos, concursos, disciplinas e bancas.</p>
+        </div>
+    </div>
+
+    <form method="get" class="global-question-filters mb-4">
+        <div>
+            <label class="form-label small" for="global-competition">Concurso</label>
+            <select class="form-select" id="global-competition" name="concurso">
+                <option value="">Todos</option>
+                {% for item in competitions %}
+                    <option value="{{ item.pk }}" {% if filters.competition == item.pk|stringformat:"s" %}selected{% endif %}>{{ item.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="form-label small" for="global-discipline">Disciplina</label>
+            <select class="form-select" id="global-discipline" name="disciplina">
+                <option value="">Todas</option>
+                {% for item in disciplines %}
+                    <option value="{{ item.pk }}" {% if filters.discipline == item.pk|stringformat:"s" %}selected{% endif %}>{{ item.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="form-label small" for="global-board">Banca</label>
+            <select class="form-select" id="global-board" name="banca">
+                <option value="">Todas</option>
+                {% for item in boards %}
+                    <option value="{{ item }}" {% if filters.board == item %}selected{% endif %}>{{ item }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="form-label small" for="global-result">Resultado</label>
+            <select class="form-select" id="global-result" name="resultado">
+                <option value="">Todos</option>
+                {% for value, label in result_choices %}
+                    <option value="{{ value }}" {% if filters.result == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="form-label small" for="global-review">Revisão</label>
+            <select class="form-select" id="global-review" name="revisao">
+                <option value="">Todas</option>
+                <option value="required" {% if filters.review == "required" %}selected{% endif %}>Marcadas</option>
+                <option value="pending" {% if filters.review == "pending" %}selected{% endif %}>Pendentes</option>
+                <option value="completed" {% if filters.review == "completed" %}selected{% endif %}>Concluídas</option>
+                <option value="not_required" {% if filters.review == "not_required" %}selected{% endif %}>Sem revisão</option>
+            </select>
+        </div>
+        <div>
+            <label class="form-label small" for="global-start">De</label>
+            <input class="form-control" id="global-start" type="date" name="inicio" value="{{ filters.start }}">
+        </div>
+        <div>
+            <label class="form-label small" for="global-end">Até</label>
+            <input class="form-control" id="global-end" type="date" name="fim" value="{{ filters.end }}">
+        </div>
+        <div class="global-question-search">
+            <label class="form-label small" for="global-q">Buscar</label>
+            <input class="form-control" id="global-q" type="search" name="q" value="{{ filters.q }}" placeholder="Questão, prova, tema, fonte...">
+        </div>
+        <div class="question-filter-actions">
+            <button class="btn btn-primary" type="submit">Filtrar</button>
+            <a class="btn btn-outline-secondary" href="{% url 'questions_global:list' %}">Limpar</a>
+        </div>
+    </form>
+
+    {% if questions %}
+        <div class="table-responsive">
+            <table class="table align-middle question-table mb-0">
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Concurso</th>
+                        <th>Disciplina</th>
+                        <th>Questão</th>
+                        <th>Banca / prova</th>
+                        <th>Aula</th>
+                        <th>Resultado</th>
+                        <th>Revisão</th>
+                        <th>Link</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in questions %}
+                        <tr>
+                            <td>{{ item.answered_date|date:"d/m/Y" }}</td>
+                            <td>
+                                <a class="table-link" href="{% url 'questions:question_list' item.competition.pk %}">
+                                    {{ item.competition.name }}
+                                </a>
+                            </td>
+                            <td>{{ item.competition_discipline.discipline.name }}</td>
+                            <td>
+                                <strong>{{ item.question_number }}</strong>
+                                <span class="question-secondary">{{ item.topic_subtopic|default:"" }}</span>
+                            </td>
+                            <td>
+                                {% if item.board %}<strong>{{ item.board }}</strong>{% endif %}
+                                <span class="question-secondary">{{ item.exam_context|default:"" }}</span>
+                            </td>
+                            <td>
+                                {% if item.lesson %}
+                                    <span>{{ item.lesson.code }}</span>
+                                    <span class="question-secondary">{{ item.lesson.title }}</span>
+                                {% else %}—{% endif %}
+                            </td>
+                            <td><span class="question-result question-result-{{ item.result }}">{{ item.get_result_display }}</span></td>
+                            <td>
+                                {% if item.review_required %}
+                                    {% if item.review_status == "completed" %}
+                                        <span class="question-review question-review-completed">Concluída</span>
+                                    {% else %}
+                                        <span class="question-review question-review-pending">Pendente</span>
+                                    {% endif %}
+                                {% else %}—{% endif %}
+                            </td>
+                            <td>
+                                {% if item.question_url %}
+                                    <a class="question-url-link" href="{{ item.question_url }}" target="_blank" rel="noopener noreferrer">{% if item.is_gran_url %}Gran ↗{% else %}Abrir ↗{% endif %}</a>
+                                {% elif item.url_pending %}
+                                    <span class="question-url-pending">Pendente</span>
+                                {% else %}—{% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if page_obj.paginator.num_pages > 1 %}
+            <nav class="question-pagination mt-4" aria-label="Paginação das questões">
+                {% if page_obj.has_previous %}
+                    <a class="btn btn-sm btn-outline-secondary" href="?pagina={{ page_obj.previous_page_number }}&concurso={{ filters.competition }}&disciplina={{ filters.discipline }}&resultado={{ filters.result }}&revisao={{ filters.review }}&banca={{ filters.board|urlencode }}&inicio={{ filters.start }}&fim={{ filters.end }}&q={{ filters.q|urlencode }}">Anterior</a>
+                {% endif %}
+                <span>Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+                {% if page_obj.has_next %}
+                    <a class="btn btn-sm btn-outline-secondary" href="?pagina={{ page_obj.next_page_number }}&concurso={{ filters.competition }}&disciplina={{ filters.discipline }}&resultado={{ filters.result }}&revisao={{ filters.review }}&banca={{ filters.board|urlencode }}&inicio={{ filters.start }}&fim={{ filters.end }}&q={{ filters.q|urlencode }}">Próxima</a>
+                {% endif %}
+            </nav>
+        {% endif %}
+    {% else %}
+        <div class="soft-empty">Nenhuma questão encontrada com os filtros atuais.</div>
+    {% endif %}
+</section>
+{% endblock %}
