@@ -106,24 +106,30 @@ function updateCollapsibleSummary(details) {
     summary.classList.toggle("btn-outline-secondary", details.open);
 }
 
-function enableLessonActions() {
-    const menus = Array.from(document.querySelectorAll("[data-lesson-actions]"));
+function enableLessonActionPopovers() {
+    document.querySelectorAll("[data-lesson-popover]").forEach((popover) => {
+        popover.addEventListener("beforetoggle", (event) => {
+            if (event.newState !== "open") return;
 
-    menus.forEach((menu) => {
-        menu.addEventListener("toggle", () => {
-            if (!menu.open) return;
+            const button = document.querySelector(
+                `[popovertarget="${popover.id}"]`
+            );
+            if (!button) return;
 
-            menus.forEach((other) => {
-                if (other !== menu) other.removeAttribute("open");
-            });
+            const rect = button.getBoundingClientRect();
+            popover.style.left = `${rect.right}px`;
+            popover.style.top = `${rect.bottom + 6}px`;
+            popover.style.transform = "translateX(-100%)";
         });
     });
 
-    document.addEventListener("click", (event) => {
-        if (event.target.closest("[data-lesson-actions]")) return;
+    const closeOpenPopovers = () => {
+        document.querySelectorAll("[data-lesson-popover]:popover-open")
+            .forEach((popover) => popover.hidePopover());
+    };
 
-        menus.forEach((menu) => menu.removeAttribute("open"));
-    });
+    window.addEventListener("resize", closeOpenPopovers);
+    window.addEventListener("scroll", closeOpenPopovers, true);
 }
 
 function enableCollapsibleForms() {
@@ -167,5 +173,5 @@ document.addEventListener("DOMContentLoaded", () => {
 
     enableSortableLists();
     enableCollapsibleForms();
-    enableLessonActions();
+    enableLessonActionPopovers();
 });
