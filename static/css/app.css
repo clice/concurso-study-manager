@@ -906,11 +906,7 @@ details > summary::-webkit-details-marker {
 }
 
 .dashboard-chart-weekly {
-    min-height: 300px;
-}
-
-.dashboard-chart-compact {
-    min-height: 270px;
+    min-height: 360px;
 }
 
 .dashboard-summary-table th {
