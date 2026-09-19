@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block title %}Aulas | {{ competition.name }}{% endblock %}
+
+{% block content %}
+<div class="page-heading mb-3">
+    <div>
+        <p class="eyebrow mb-1">ESTUDO</p>
+        <h1 class="h2 mb-1">Aulas</h1>
+        <p class="text-body-secondary mb-0">{{ competition.name }}</p>
+    </div>
+    <a class="btn btn-primary" href="{% url 'studies:lesson_create' competition.pk %}">Adicionar aula</a>
+</div>
+
+{% include "competitions/competition_nav.html" %}
+
+<div class="lesson-metrics mb-4">
+    <div class="summary-item"><span>Aulas exibidas</span><strong>{{ filtered_total }}</strong></div>
+    <div class="summary-item"><span>Concluídas</span><strong>{{ completed_count }}</strong></div>
+    <div class="summary-item"><span>Em andamento</span><strong>{{ in_progress_count }}</strong></div>
+    <div class="summary-item"><span>Não iniciadas</span><strong>{{ not_started_count }}</strong></div>
+</div>
+
+<section class="content-card">
+    <div class="content-card-header mb-3">
+        <div>
+            <p class="eyebrow mb-1">CURSO</p>
+            <h2 class="h4 mb-1">Lista de aulas</h2>
+            <p class="text-body-secondary small mb-0">Filtre sem alterar a sequência cadastrada das aulas.</p>
+        </div>
+    </div>
+
+    <form method="get" class="lesson-filters mb-4">
+        <div>
+            <label class="form-label small" for="filter-discipline">Disciplina</label>
+            <select class="form-select" id="filter-discipline" name="disciplina">
+                <option value="">Todas</option>
+                {% for link in discipline_links %}
+                    <option value="{{ link.pk }}" {% if filters.discipline == link.pk|stringformat:"s" %}selected{% endif %}>{{ link.discipline.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="form-label small" for="filter-week">Semana</label>
+            <select class="form-select" id="filter-week" name="semana">
+                <option value="">Todas</option>
+                {% for week in weeks %}
+                    <option value="{{ week }}" {% if filters.week == week|stringformat:"s" %}selected{% endif %}>Semana {{ week }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="form-label small" for="filter-date">Data planejada</label>
+            <input class="form-control" id="filter-date" name="data" type="date" value="{{ filters.date }}">
+        </div>
+        <div>
+            <label class="form-label small" for="filter-status">Status</label>
+            <select class="form-select" id="filter-status" name="status">
+                <option value="">Todos</option>
+                {% for value, label in status_choices %}
+                    <option value="{{ value }}" {% if filters.status == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="lesson-filter-search">
+            <label class="form-label small" for="filter-q">Buscar</label>
+            <input class="form-control" id="filter-q" name="q" type="search" value="{{ filters.q }}" placeholder="ID, título ou macrotema">
+        </div>
+        <div class="lesson-filter-actions">
+            <button class="btn btn-primary" type="submit">Filtrar</button>
+            <a class="btn btn-outline-secondary" href="{% url 'studies:lesson_list' competition.pk %}">Limpar</a>
+        </div>
+    </form>
+
+    {% if lessons %}
+        <div class="table-responsive">
+            <table class="table align-middle lesson-table mb-0">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Disciplina</th>
+                        <th>Aula / conteúdo</th>
+                        <th>Semana</th>
+                        <th>Planejada</th>
+                        <th>Estudada</th>
+                        <th>Status</th>
+                        <th>Questões</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for lesson in lessons %}
+                        <tr>
+                            <td><strong>{{ lesson.code|default:"—" }}</strong></td>
+                            <td>
+                                <a class="table-link" href="{% url 'competitions:discipline_detail' competition.pk lesson.competition_discipline.pk %}">
+                                    {{ lesson.competition_discipline.discipline.name }}
+                                </a>
+                            </td>
+                            <td>
+                                <strong>{{ lesson.title }}</strong>
+                                {% if lesson.macrotheme %}<span class="lesson-secondary">{{ lesson.macrotheme }}</span>{% endif %}
+                                {% if lesson.syllabus_items.all %}
+                                    <span class="lesson-secondary">
+                                        Edital:
+                                        {% for item in lesson.syllabus_items.all %}
+                                            {{ item.item_code }}{% if not forloop.last %}, {% endif %}
+                                        {% endfor %}
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>{% if lesson.suggested_week %}{{ lesson.suggested_week }}{% else %}—{% endif %}</td>
+                            <td>{{ lesson.planned_date|date:"d/m/Y"|default:"—" }}</td>
+                            <td>{{ lesson.studied_date|date:"d/m/Y"|default:"—" }}</td>
+                            <td><span class="lesson-status lesson-status-{{ lesson.status }}">{{ lesson.get_status_display }}</span></td>
+                            <td>
+                                {% if lesson.questions_done is not None %}
+                                    {{ lesson.questions_done }}
+                                    {% if lesson.correct_answers is not None %}
+                                        · {{ lesson.correct_answers }} acertos
+                                    {% endif %}
+                                    {% if lesson.accuracy is not None %}
+                                        <span class="lesson-secondary">{{ lesson.accuracy|floatformat:"0" }}%</span>
+                                    {% endif %}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <a class="btn btn-sm btn-outline-secondary" href="{% url 'studies:lesson_edit' competition.pk lesson.pk %}">Editar</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="soft-empty">Nenhuma aula encontrada com os filtros atuais.</div>
+    {% endif %}
+</section>
+{% endblock %}
