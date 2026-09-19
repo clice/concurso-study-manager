@@ -1,5 +1,7 @@
 from datetime import date
+from io import StringIO
 
+from django.core.management import call_command
 from django.test import TestCase
 from django.urls import reverse
 
@@ -292,3 +294,100 @@ class LessonTests(TestCase):
         self.assertEqual(lesson.status, Lesson.Status.COMPLETED)
         self.assertEqual(lesson.studied_date, date(2026, 9, 19))
         self.assertEqual(lesson.correct_answers, 5)
+
+
+
+class DataprevLessonImportTests(TestCase):
+    def setUp(self):
+        board, _ = ExamBoard.objects.get_or_create(
+            acronym="FGV",
+            defaults={"name": "Fundação Getulio Vargas"},
+        )
+        self.competition = Competition.objects.create(
+            name="DATAPREV 2026",
+            organization="DATAPREV",
+            role="ATI — Desenvolvimento de Software",
+            board=board,
+            status=Competition.Status.ACTIVE,
+        )
+        discipline = Discipline.objects.create(
+            name="Inteligência de Negócios (Business Intelligence)"
+        )
+        self.link = CompetitionDiscipline.objects.create(
+            competition=self.competition,
+            discipline=discipline,
+            knowledge_area=CompetitionDiscipline.KnowledgeArea.SPECIFIC,
+            priority=CompetitionDiscipline.Priority.P1,
+        )
+        for code in ["1", "2", "3", "4", "5", "6", "7"]:
+            SyllabusItem.objects.create(
+                competition_discipline=self.link,
+                item_code=code,
+                content=f"Conteúdo BI {code}",
+            )
+
+    def test_import_can_adopt_manual_lesson_and_create_remaining_rows(self):
+        manual = Lesson.objects.create(
+            competition_discipline=self.link,
+            title="1 - Business Intelligence - Introdução",
+        )
+        original_code = manual.code
+
+        output = StringIO()
+        call_command(
+            "import_dataprev_2026_lessons",
+            competition="DATAPREV 2026",
+            discipline="Inteligência de Negócios (Business Intelligence)",
+            stdout=output,
+        )
+
+        self.assertEqual(Lesson.objects.count(), 17)
+
+        manual.refresh_from_db()
+        self.assertEqual(manual.code, original_code)
+        self.assertEqual(manual.source_reference, "G764")
+        self.assertEqual(manual.position, 1)
+        self.assertEqual(manual.status, Lesson.Status.IN_PROGRESS)
+        self.assertTrue(manual.video_url.startswith("https://www.grancursosonline.com.br/"))
+        self.assertTrue(manual.transcript_url.startswith("https://drive.google.com/"))
+        self.assertTrue(manual.handout_url.startswith("https://drive.google.com/"))
+        self.assertEqual(
+            list(manual.syllabus_items.values_list("item_code", flat=True)),
+            ["1"],
+        )
+        self.assertIn("16 criada(s)", output.getvalue())
+        self.assertIn("1 cadastro(s) manual(is) aproveitado(s)", output.getvalue())
+
+    def test_second_import_preserves_existing_imported_lessons_by_default(self):
+        call_command(
+            "import_dataprev_2026_lessons",
+            competition="DATAPREV 2026",
+            discipline="Inteligência de Negócios (Business Intelligence)",
+            stdout=StringIO(),
+        )
+        lesson = Lesson.objects.get(source_reference="G764")
+        lesson.notes = "Anotação local posterior à importação."
+        lesson.save(update_fields=["notes"])
+
+        output = StringIO()
+        call_command(
+            "import_dataprev_2026_lessons",
+            competition="DATAPREV 2026",
+            discipline="Inteligência de Negócios (Business Intelligence)",
+            stdout=output,
+        )
+
+        lesson.refresh_from_db()
+        self.assertEqual(lesson.notes, "Anotação local posterior à importação.")
+        self.assertIn("17 preservada(s)", output.getvalue())
+
+    def test_dry_run_does_not_create_lessons(self):
+        call_command(
+            "import_dataprev_2026_lessons",
+            competition="DATAPREV 2026",
+            discipline="Inteligência de Negócios (Business Intelligence)",
+            dry_run=True,
+            stdout=StringIO(),
+        )
+
+        self.assertFalse(Lesson.objects.exists())
