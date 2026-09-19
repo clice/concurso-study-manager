@@ -51,7 +51,7 @@ body {
 }
 
 .metric-label,
-.summary-item span {
+.summary-item > span {
     display: block;
     color: var(--muted);
     font-size: .78rem;
