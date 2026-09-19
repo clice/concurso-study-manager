@@ -864,7 +864,7 @@ details > summary::-webkit-details-marker {
 .dashboard-grid {
     display: grid;
     gap: 1rem;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(12, minmax(0, 1fr));
 }
 
 .dashboard-chart-card {
@@ -873,6 +873,14 @@ details > summary::-webkit-details-marker {
 
 .dashboard-chart-wide {
     grid-column: 1 / -1;
+}
+
+.dashboard-chart-card:not(.dashboard-chart-wide):not(.dashboard-chart-accuracy) {
+    grid-column: span 4;
+}
+
+.dashboard-chart-accuracy {
+    grid-column: span 8;
 }
 
 .dashboard-chart-heading {
@@ -953,7 +961,9 @@ details > summary::-webkit-details-marker {
         grid-template-columns: 1fr;
     }
 
-    .dashboard-chart-wide {
+    .dashboard-chart-wide,
+    .dashboard-chart-card:not(.dashboard-chart-wide):not(.dashboard-chart-accuracy),
+    .dashboard-chart-accuracy {
         grid-column: auto;
     }
 }
