@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Editar disciplina | {{ competition.name }}{% endblock %}
+
+{% block content %}
+<div class="page-heading mb-4">
+    <div>
+        <p class="eyebrow mb-1">DISCIPLINAS</p>
+        <h1 class="h2 mb-1">Editar {{ link.discipline.name }}</h1>
+        <p class="text-body-secondary mb-0">{{ competition.name }}</p>
+    </div>
+    <a class="btn btn-outline-secondary" href="{% url 'competitions:detail' competition.pk %}#disciplinas">Voltar</a>
+</div>
+
+<form method="post" class="form-card">
+    {% csrf_token %}
+    <datalist id="discipline-options">
+        {% for name in discipline_names %}<option value="{{ name }}">{% endfor %}
+    </datalist>
+    <div class="row g-3">
+        <div class="col-12">{% include "competitions/field.html" with field=form.discipline_name %}</div>
+        <div class="col-12 col-md-6 col-lg-3">{% include "competitions/field.html" with field=form.knowledge_area %}</div>
+        <div class="col-12 col-md-6 col-lg-3">{% include "competitions/field.html" with field=form.priority %}</div>
+        <div class="col-12 col-md-6 col-lg-3">{% include "competitions/field.html" with field=form.expected_questions %}</div>
+        <div class="col-12 col-md-6 col-lg-3">{% include "competitions/field.html" with field=form.question_count_kind %}</div>
+        <div class="col-12 col-md-6 col-lg-4">{% include "competitions/field.html" with field=form.weight %}</div>
+        <div class="col-12 col-md-6 col-lg-4">{% include "competitions/field.html" with field=form.max_score %}</div>
+        <div class="col-12 col-md-6 col-lg-4">{% include "competitions/field.html" with field=form.minimum_score %}</div>
+    </div>
+    <div class="form-actions d-flex justify-content-end gap-2">
+        <a class="btn btn-outline-secondary" href="{% url 'competitions:detail' competition.pk %}#disciplinas">Cancelar</a>
+        <button class="btn btn-primary" type="submit">Salvar alterações</button>
+    </div>
+</form>
+{% endblock %}
