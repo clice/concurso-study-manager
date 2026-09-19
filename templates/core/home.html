@@ -20,30 +20,35 @@
 <div class="row g-3">
     {% for competition in competitions %}
         <div class="col-12 col-lg-6">
-            <article class="competition-card h-100">
-                <div class="d-flex justify-content-between gap-3">
-                    <div>
-                        <span class="badge text-bg-light border mb-2">{{ competition.get_status_display }}</span>
-                        <h2 class="h4 mb-1">{{ competition.organization }}</h2>
-                        <p class="mb-2">{{ competition.role }}</p>
-                    </div>
-                    {% if competition.exam_date %}
-                        <div class="text-end">
-                            <span class="small text-body-secondary d-block">Prova</span>
-                            <strong>{{ competition.exam_date|date:"d/m/Y" }}</strong>
+            <a class="competition-link" href="{% url 'competitions:detail' competition.pk %}">
+                <article class="competition-card h-100">
+                    <div class="d-flex justify-content-between gap-3">
+                        <div>
+                            <span class="badge text-bg-light border mb-2">{{ competition.get_status_display }}</span>
+                            <h2 class="h4 mb-1">{{ competition.name }}</h2>
+                            <p class="mb-1">{{ competition.organization }}</p>
+                            <p class="text-body-secondary mb-2">{{ competition.role }}</p>
                         </div>
-                    {% endif %}
-                </div>
-                <div class="small text-body-secondary mt-3">
-                    {% if competition.board %}Banca: {{ competition.board }}{% else %}Banca não informada{% endif %}
-                </div>
-            </article>
+                        {% if competition.exam_date %}
+                            <div class="text-end">
+                                <span class="small text-body-secondary d-block">Prova</span>
+                                <strong>{{ competition.exam_date|date:"d/m/Y" }}</strong>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="small text-body-secondary mt-3">
+                        {% if competition.board %}Banca: {{ competition.board }}{% else %}Banca não informada{% endif %}
+                        {% if competition.location %} · {{ competition.location }}{% endif %}
+                    </div>
+                </article>
+            </a>
         </div>
     {% empty %}
         <div class="col-12">
             <div class="empty-state">
                 <h2 class="h5">Nenhum concurso cadastrado ainda</h2>
-                <p class="text-body-secondary mb-0">O primeiro conjunto real será o DATAPREV 2026.</p>
+                <p class="text-body-secondary mb-3">Cadastre o primeiro concurso e depois organize suas etapas e disciplinas.</p>
+                <a class="btn btn-primary" href="{% url 'competitions:create' %}">Cadastrar concurso</a>
             </div>
         </div>
     {% endfor %}
