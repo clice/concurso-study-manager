@@ -91,14 +91,17 @@ class QuestionRecord(models.Model):
 
     @classmethod
     def next_code(cls):
-        highest = 0
-        for code in cls.objects.exclude(code="").values_list("code", flat=True):
-            if not code or not code.startswith("Q"):
-                continue
-            numeric = code[1:]
+        latest_code = (
+            cls.objects.exclude(code="")
+            .order_by("-id")
+            .values_list("code", flat=True)
+            .first()
+        )
+        if latest_code and latest_code.startswith("Q"):
+            numeric = latest_code[1:]
             if numeric.isdigit():
-                highest = max(highest, int(numeric))
-        return f"Q{highest + 1:04d}"
+                return f"Q{int(numeric) + 1:04d}"
+        return "Q0001"
 
     @property
     def competition(self):
