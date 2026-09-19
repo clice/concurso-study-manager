@@ -37,7 +37,7 @@
                         {% endif %}
                     </div>
                     <div class="small text-body-secondary mt-3">
-                        {% if competition.board %}Banca: {{ competition.board }}{% else %}Banca não informada{% endif %}
+                        {% if competition.board %}Banca: {{ competition.board.acronym }}{% else %}Banca não informada{% endif %}
                         {% if competition.location %} · {{ competition.location }}{% endif %}
                     </div>
                 </article>
