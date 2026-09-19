@@ -24,6 +24,14 @@ class Lesson(models.Model):
         editable=False,
         blank=True,
     )
+    source_reference = models.CharField(
+        "referência de origem",
+        max_length=40,
+        unique=True,
+        editable=False,
+        blank=True,
+        null=True,
+    )
     title = models.CharField("título", max_length=300)
     macrotheme = models.CharField("macrotema", max_length=220, blank=True)
     syllabus_items = models.ManyToManyField(
