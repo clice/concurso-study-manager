@@ -14,4 +14,19 @@ urlpatterns = [
     path("<int:pk>/disciplinas/adicionar/", views.discipline_add, name="discipline_add"),
     path("<int:pk>/disciplinas/<int:link_id>/editar/", views.discipline_edit, name="discipline_edit"),
     path("<int:pk>/disciplinas/reordenar/", views.discipline_reorder, name="discipline_reorder"),
+    path(
+        "<int:pk>/edital/<int:link_id>/itens/adicionar/",
+        views.syllabus_item_add,
+        name="syllabus_item_add",
+    ),
+    path(
+        "<int:pk>/edital/itens/<int:item_id>/editar/",
+        views.syllabus_item_edit,
+        name="syllabus_item_edit",
+    ),
+    path(
+        "<int:pk>/edital/<int:link_id>/itens/reordenar/",
+        views.syllabus_item_reorder,
+        name="syllabus_item_reorder",
+    ),
 ]

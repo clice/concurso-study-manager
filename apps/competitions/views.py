@@ -8,8 +8,19 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 
-from .forms import CompetitionDisciplineForm, CompetitionForm, CompetitionStageForm
-from .models import Competition, CompetitionDiscipline, CompetitionStage, Discipline
+from .forms import (
+    CompetitionDisciplineForm,
+    CompetitionForm,
+    CompetitionStageForm,
+    SyllabusItemForm,
+)
+from .models import (
+    Competition,
+    CompetitionDiscipline,
+    CompetitionStage,
+    Discipline,
+    SyllabusItem,
+)
 
 
 def competition_create(request):
@@ -54,6 +65,34 @@ def _competition_detail_context(competition, **extra):
         question_count_kind=CompetitionDiscipline.QuestionCountKind.ESTIMATED,
     ).exists()
 
+    syllabus_form_overrides = extra.pop("syllabus_form_overrides", {})
+    open_syllabus_link_id = extra.get("open_syllabus_link_id")
+    discipline_links = list(
+        competition.discipline_links.select_related("discipline")
+        .prefetch_related("syllabus_items__parent")
+        .order_by("position", "discipline__name")
+    )
+
+    syllabus_blocks = []
+    total_syllabus_items = 0
+
+    for link in discipline_links:
+        items = list(link.syllabus_items.all())
+        total_syllabus_items += len(items)
+        syllabus_blocks.append(
+            {
+                "link": link,
+                "items": items,
+                "item_count": len(items),
+                "form": syllabus_form_overrides.get(link.id)
+                or SyllabusItemForm(
+                    discipline_link=link,
+                    prefix=f"syllabus-{link.id}",
+                ),
+                "open": open_syllabus_link_id == link.id,
+            }
+        )
+
     context = {
         "competition": competition,
         "stage_form": CompetitionStageForm(),
@@ -62,6 +101,9 @@ def _competition_detail_context(competition, **extra):
         "total_questions": totals["total_questions"],
         "total_max_score": totals["total_max_score"],
         "has_estimates": has_estimates,
+        "syllabus_blocks": syllabus_blocks,
+        "syllabus_discipline_count": len(discipline_links),
+        "total_syllabus_items": total_syllabus_items,
     }
     context.update(extra)
     return context
@@ -75,10 +117,20 @@ def competition_detail(request, pk):
         ),
         pk=pk,
     )
+
+    open_syllabus_link_id = request.GET.get("edital")
+    try:
+        open_syllabus_link_id = int(open_syllabus_link_id) if open_syllabus_link_id else None
+    except (TypeError, ValueError):
+        open_syllabus_link_id = None
+
     return render(
         request,
         "competitions/competition_detail.html",
-        _competition_detail_context(competition),
+        _competition_detail_context(
+            competition,
+            open_syllabus_link_id=open_syllabus_link_id,
+        ),
     )
 
 
@@ -233,5 +285,114 @@ def discipline_reorder(request, pk):
         for position, link_id in enumerate(requested, start=1):
             by_id[link_id].position = position
         CompetitionDiscipline.objects.bulk_update(links, ["position"])
+
+    return JsonResponse({"ok": True})
+
+
+
+def syllabus_item_add(request, pk, link_id):
+    competition = get_object_or_404(Competition, pk=pk)
+    link = get_object_or_404(
+        CompetitionDiscipline.objects.select_related("discipline"),
+        pk=link_id,
+        competition=competition,
+    )
+
+    if request.method != "POST":
+        return redirect(
+            f'{reverse("competitions:detail", kwargs={"pk": pk})}?edital={link.pk}#edital-{link.pk}'
+        )
+
+    form = SyllabusItemForm(
+        request.POST,
+        discipline_link=link,
+        prefix=f"syllabus-{link.id}",
+    )
+
+    if form.is_valid():
+        item = form.save()
+        label = item.item_code or "novo item"
+        messages.success(
+            request,
+            f'Item "{label}" adicionado a {link.discipline.name}.',
+        )
+        return redirect(
+            f'{reverse("competitions:detail", kwargs={"pk": pk})}?edital={link.pk}#edital-{link.pk}'
+        )
+
+    return render(
+        request,
+        "competitions/competition_detail.html",
+        _competition_detail_context(
+            competition,
+            syllabus_form_overrides={link.id: form},
+            open_section="syllabus",
+            open_syllabus_link_id=link.id,
+        ),
+    )
+
+
+def syllabus_item_edit(request, pk, item_id):
+    competition = get_object_or_404(Competition, pk=pk)
+    item = get_object_or_404(
+        SyllabusItem.objects.select_related(
+            "competition_discipline__discipline",
+            "competition_discipline__competition",
+        ),
+        pk=item_id,
+        competition_discipline__competition=competition,
+    )
+    link = item.competition_discipline
+    form = SyllabusItemForm(
+        request.POST or None,
+        instance=item,
+        discipline_link=link,
+    )
+
+    if request.method == "POST" and form.is_valid():
+        updated = form.save()
+        messages.success(
+            request,
+            f'Item "{updated.item_code or "sem código"}" atualizado.',
+        )
+        return redirect(
+            f'{reverse("competitions:detail", kwargs={"pk": pk})}?edital={link.pk}#edital-{link.pk}'
+        )
+
+    return render(
+        request,
+        "competitions/syllabus_item_form.html",
+        {
+            "competition": competition,
+            "link": link,
+            "item": item,
+            "form": form,
+        },
+    )
+
+
+@require_POST
+def syllabus_item_reorder(request, pk, link_id):
+    competition = get_object_or_404(Competition, pk=pk)
+    link = get_object_or_404(
+        CompetitionDiscipline,
+        pk=link_id,
+        competition=competition,
+    )
+    requested = _requested_order(request)
+    items = list(link.syllabus_items.order_by("position", "id"))
+    current_ids = [item.id for item in items]
+
+    if requested is None or sorted(requested) != sorted(current_ids):
+        return JsonResponse(
+            {"ok": False, "error": "Ordem dos itens do edital inválida."},
+            status=400,
+        )
+
+    by_id = {item.id: item for item in items}
+    with transaction.atomic():
+        for position, item_id in enumerate(requested, start=1):
+            by_id[item_id].position = position
+        SyllabusItem.objects.bulk_update(items, ["position"])
 
     return JsonResponse({"ok": True})
