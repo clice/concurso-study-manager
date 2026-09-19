@@ -2,7 +2,7 @@
     <a class="competition-nav-link {% if active_tab == 'overview' %}active{% endif %}" href="{% url 'competitions:detail' competition.pk %}">
         Visão geral
     </a>
-    <a class="competition-nav-link {% if active_tab == 'lessons' %}active{% endif %}" href="{% url 'competitions:lessons' competition.pk %}">
+    <a class="competition-nav-link {% if active_tab == 'lessons' %}active{% endif %}" href="{% url 'studies:lesson_list' competition.pk %}">
         Aulas
     </a>
     <a class="competition-nav-link {% if active_tab == 'syllabus' %}active{% endif %}" href="{% url 'competitions:syllabus' competition.pk %}">
