@@ -219,33 +219,24 @@ class SyllabusItemForm(forms.ModelForm):
         model = SyllabusItem
         fields = [
             "parent",
-            "item_code",
             "content",
-            "priority",
         ]
         widgets = {
             "content": forms.Textarea(
                 attrs={
-                    "rows": 3,
+                    "rows": 4,
                     "placeholder": "Transcreva o conteúdo exatamente como aparece no edital.",
                 }
             ),
         }
         labels = {
             "parent": "Item-pai (opcional)",
-            "item_code": "Item / código (opcional)",
-            "priority": "Prioridade (opcional)",
         }
         help_texts = {
             "parent": (
                 "Use apenas para subitens. Depois que um item for salvo nesta disciplina, "
                 "ele passa a aparecer aqui como possível item-pai."
             ),
-            "item_code": (
-                "Deixe vazio para gerar automaticamente. "
-                "Preencha apenas se o edital usar uma numeração diferente."
-            ),
-            "priority": "Se ficar em branco, herda a prioridade da disciplina.",
         }
 
     def __init__(self, *args, discipline_link=None, **kwargs):
@@ -259,17 +250,8 @@ class SyllabusItemForm(forms.ModelForm):
                 parent_queryset = parent_queryset.exclude(pk=self.instance.pk)
             self.fields["parent"].queryset = parent_queryset
 
-            inherited_label = f"Herdar da disciplina ({discipline_link.priority})"
-            self.fields["priority"].choices = [
-                ("", inherited_label),
-                *CompetitionDiscipline.Priority.choices,
-            ]
-
-        for name, field in self.fields.items():
-            if name in {"priority", "parent"}:
-                field.widget.attrs["class"] = "form-select"
-            else:
-                field.widget.attrs.setdefault("class", "form-control")
+        self.fields["parent"].widget.attrs["class"] = "form-select"
+        self.fields["content"].widget.attrs.setdefault("class", "form-control")
 
     def clean_parent(self):
         parent = self.cleaned_data.get("parent")
@@ -289,9 +271,6 @@ class SyllabusItemForm(forms.ModelForm):
                     ancestor = ancestor.parent
 
         return parent
-
-    def clean_priority(self):
-        return self.cleaned_data.get("priority") or None
 
     def save(self, commit=True):
         instance = super().save(commit=False)
