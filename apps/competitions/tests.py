@@ -302,3 +302,24 @@ class CompetitionRegistrationTests(TestCase):
         self.assertContains(response, 'aria-label="O total inclui estimativas"', count=1)
         self.assertEqual(response.context["total_questions"], 30)
         self.assertEqual(response.context["total_max_score"], Decimal("57"))
+
+
+    def test_unicode_casefold_reuses_existing_discipline(self):
+        Discipline.objects.create(name="LÍNGUA PORTUGUESA")
+
+        response = self.client.post(
+            reverse("competitions:discipline_add", kwargs={"pk": self.competition.pk}),
+            {
+                "discipline_name": "Língua Portuguesa",
+                "knowledge_area": CompetitionDiscipline.KnowledgeArea.GENERAL,
+                "priority": CompetitionDiscipline.Priority.P1,
+                "expected_questions": "12",
+                "question_count_kind": CompetitionDiscipline.QuestionCountKind.OFFICIAL,
+                "weight": "1.00",
+                "max_score": "12.00",
+                "minimum_score": "",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Discipline.objects.count(), 1)
