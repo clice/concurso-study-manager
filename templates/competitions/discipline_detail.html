@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}{{ link.discipline.name }} | {{ competition.name }}{% endblock %}
+
+{% block content %}
+<div class="page-heading mb-3">
+    <div>
+        <p class="eyebrow mb-1">DISCIPLINA</p>
+        <h1 class="h2 mb-1">{{ link.discipline.name }}</h1>
+        <p class="text-body-secondary mb-0">{{ competition.name }}</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a class="btn btn-outline-secondary" href="{% url 'competitions:detail' competition.pk %}">Voltar</a>
+        <a class="btn btn-outline-primary" href="{% url 'competitions:discipline_edit' competition.pk link.pk %}">Editar disciplina</a>
+    </div>
+</div>
+
+{% include "competitions/competition_nav.html" %}
+
+<div class="discipline-summary-grid mb-4">
+    <div class="summary-item"><span>Grupo</span><strong>{{ link.get_knowledge_area_display }}</strong></div>
+    <div class="summary-item"><span>Prioridade</span><strong>{{ link.priority }}</strong></div>
+    <div class="summary-item">
+        <span>Questões</span>
+        <strong>
+            {{ link.expected_questions|default:"—" }}
+            {% if link.expected_questions is not None and link.question_count_kind == "estimated" %}
+                <span class="estimate-marker ms-1" title="Estimativa" aria-label="Estimativa">E</span>
+            {% endif %}
+        </strong>
+    </div>
+    <div class="summary-item"><span>Peso</span><strong>{{ link.weight|default:"—" }}</strong></div>
+    <div class="summary-item"><span>Pontuação máxima</span><strong>{{ link.max_score|default:"—" }}</strong></div>
+    <div class="summary-item"><span>Pontuação mínima</span><strong>{{ link.minimum_score|default:"—" }}</strong></div>
+</div>
+
+<section class="content-card mb-4">
+    <div class="content-card-header mb-3">
+        <div>
+            <p class="eyebrow mb-1">EDITAL</p>
+            <h2 class="h4 mb-1">Conteúdo da disciplina</h2>
+            <p class="text-body-secondary small mb-0">{{ syllabus_item_count }} item{{ syllabus_item_count|pluralize }} cadastrado{{ syllabus_item_count|pluralize }}.</p>
+        </div>
+        <a class="btn btn-sm btn-outline-primary" href="{% url 'competitions:syllabus' competition.pk %}?disciplina={{ link.pk }}#edital-{{ link.pk }}">Gerenciar edital</a>
+    </div>
+
+    {% if syllabus_items %}
+        <div class="table-responsive">
+            <table class="table align-middle syllabus-table mb-0">
+                <thead><tr><th>Item</th><th>Conteúdo</th></tr></thead>
+                <tbody>
+                    {% for item in syllabus_items %}
+                        <tr class="{% if item.parent_id %}syllabus-child-row{% endif %}">
+                            <td class="syllabus-code-cell">
+                                <strong>{{ item.item_code }}</strong>
+                                {% if item.parent_id %}<span class="syllabus-parent-note">subitem de {{ item.parent.item_code }}</span>{% endif %}
+                            </td>
+                            <td>{{ item.content }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="soft-empty">Nenhum item do edital cadastrado para esta disciplina.</div>
+    {% endif %}
+</section>
+
+<section class="content-card">
+    <div class="content-card-header">
+        <div>
+            <p class="eyebrow mb-1">AULAS</p>
+            <h2 class="h4 mb-1">Aulas da disciplina</h2>
+            <p class="text-body-secondary small mb-0">A estrutura de aulas será adicionada na próxima etapa do desenvolvimento.</p>
+        </div>
+        <a class="btn btn-sm btn-outline-primary" href="{% url 'competitions:lessons' competition.pk %}">Ir para Aulas</a>
+    </div>
+</section>
+{% endblock %}
