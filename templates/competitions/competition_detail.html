@@ -116,7 +116,8 @@
         <div>
             <p class="eyebrow mb-1">PROGRAMA DA PROVA</p>
             <h2 class="h4 mb-1">Disciplinas</h2>
-            <p class="text-body-secondary small mb-0">A disciplina é cadastrada uma vez e reutilizada entre concursos. A ordem também pode ser alterada arrastando.</p>
+            <p class="text-body-secondary small mb-1">A disciplina é cadastrada uma vez e reutilizada entre concursos. A ordem também pode ser alterada arrastando.</p>
+            <p class="estimate-legend mb-0"><span class="estimate-marker" aria-hidden="true">E</span> indica que o número de questões é uma estimativa, não uma distribuição oficial do edital.</p>
         </div>
     </div>
 
@@ -153,7 +154,7 @@
                                 {% if link.expected_questions is not None %}
                                     {{ link.expected_questions }}
                                     {% if link.question_count_kind == "estimated" %}
-                                        <span class="badge rounded-pill badge-soft-warning ms-1">Estimativa</span>
+                                        <span class="estimate-marker ms-1" title="Estimativa" aria-label="Estimativa">E</span>
                                     {% endif %}
                                 {% else %}
                                     —
@@ -171,7 +172,7 @@
                         <th colspan="3">Total</th>
                         <th>
                             {{ total_questions|default:"—" }}
-                            {% if has_estimates %}<span class="badge rounded-pill badge-soft-warning ms-1">inclui estimativas</span>{% endif %}
+                            {% if has_estimates %}<span class="estimate-marker ms-1" title="O total inclui estimativas" aria-label="O total inclui estimativas">E</span>{% endif %}
                         </th>
                         <th>—</th>
                         <th>{{ total_max_score|default:"—" }}</th>
