@@ -256,3 +256,28 @@ details > summary::-webkit-details-marker {
 .study-table tbody tr.sortable-item.dragging > * {
     background: var(--accent-soft);
 }
+
+
+.approval-rule {
+    background: #f8fafc;
+    border-left: 3px solid var(--accent);
+    border-radius: .35rem;
+    color: #475569;
+    font-size: .82rem;
+    padding: .55rem .7rem;
+}
+
+.badge-soft-warning {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.study-table .totals-row > * {
+    background: #f8fafc;
+    border-top: 2px solid var(--line);
+    font-weight: 700;
+}
+
+[data-collapsible-form] {
+    scroll-margin-top: 1rem;
+}
