@@ -1,6 +1,9 @@
 from datetime import date
 from decimal import Decimal
 
+from io import StringIO
+
+from django.core.management import call_command
 from django.test import TestCase
 from django.urls import reverse
 
@@ -533,3 +536,99 @@ class SyllabusItemTests(TestCase):
             {"edital": self.link.pk},
         )
         self.assertEqual(detail_response.context["open_syllabus_link_id"], self.link.pk)
+
+
+
+class DataprevSyllabusImportTests(TestCase):
+    def setUp(self):
+        board, _ = ExamBoard.objects.get_or_create(
+            acronym="FGV",
+            defaults={"name": "Fundação Getulio Vargas"},
+        )
+        self.competition = Competition.objects.create(
+            name="DATAPREV 2026",
+            organization="DATAPREV",
+            role="ATI — Desenvolvimento de Software",
+            board=board,
+            status=Competition.Status.ACTIVE,
+        )
+
+        self.links = {}
+        for name in [
+            "Atualidades e Inteligência Artificial",
+            "Legislação Acerca de Segurança da Informação e Proteção de Dados",
+            "Desenvolvimento de Sistemas",
+            "Inteligência de Negócios (Business Intelligence)",
+            "Segurança da Informação",
+            "Banco de Dados",
+            "Gestão e Governança de TI",
+        ]:
+            discipline = Discipline.objects.create(name=name)
+            self.links[name] = CompetitionDiscipline.objects.create(
+                competition=self.competition,
+                discipline=discipline,
+                knowledge_area=(
+                    CompetitionDiscipline.KnowledgeArea.GENERAL
+                    if name.startswith(("Atualidades", "Legislação"))
+                    else CompetitionDiscipline.KnowledgeArea.SPECIFIC
+                ),
+                priority=CompetitionDiscipline.Priority.P1,
+            )
+
+    def test_import_creates_all_remaining_dataprev_items(self):
+        output = StringIO()
+        call_command(
+            "import_dataprev_2026_syllabus",
+            competition="DATAPREV 2026",
+            stdout=output,
+        )
+
+        self.assertEqual(
+            SyllabusItem.objects.filter(
+                competition_discipline__competition=self.competition
+            ).count(),
+            85,
+        )
+
+        development = self.links["Desenvolvimento de Sistemas"]
+        item_19_1 = development.syllabus_items.get(item_code="19.1")
+        item_19_1_7 = development.syllabus_items.get(item_code="19.1.7")
+        self.assertEqual(item_19_1_7.parent, item_19_1)
+
+        governance = self.links["Gestão e Governança de TI"]
+        self.assertTrue(governance.syllabus_items.filter(item_code="5.1").exists())
+
+    def test_import_preserves_disciplines_that_already_have_items(self):
+        legislation = self.links[
+            "Legislação Acerca de Segurança da Informação e Proteção de Dados"
+        ]
+        SyllabusItem.objects.create(
+            competition_discipline=legislation,
+            content="Item já cadastrado manualmente",
+        )
+
+        call_command(
+            "import_dataprev_2026_syllabus",
+            competition="DATAPREV 2026",
+            stdout=StringIO(),
+        )
+
+        self.assertEqual(legislation.syllabus_items.count(), 1)
+        self.assertEqual(
+            legislation.syllabus_items.get().content,
+            "Item já cadastrado manualmente",
+        )
+
+    def test_dry_run_does_not_write_data(self):
+        call_command(
+            "import_dataprev_2026_syllabus",
+            competition="DATAPREV 2026",
+            dry_run=True,
+            stdout=StringIO(),
+        )
+
+        self.assertFalse(
+            SyllabusItem.objects.filter(
+                competition_discipline__competition=self.competition
+            ).exists()
+        )
