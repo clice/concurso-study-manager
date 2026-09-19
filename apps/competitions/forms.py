@@ -265,6 +265,16 @@ class SyllabusItemForm(forms.ModelForm):
                 raise forms.ValidationError(
                     "O item-pai precisa pertencer à mesma disciplina."
                 )
+
+            if self.instance and self.instance.pk:
+                ancestor = parent
+                while ancestor is not None:
+                    if ancestor.pk == self.instance.pk:
+                        raise forms.ValidationError(
+                            "Um item não pode ser descendente de si mesmo."
+                        )
+                    ancestor = ancestor.parent
+
         return parent
 
     def save(self, commit=True):
