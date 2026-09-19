@@ -89,7 +89,8 @@ def question_list(request, pk):
 
     if query:
         questions = questions.filter(
-            Q(question_number__icontains=query)
+            Q(code__icontains=query)
+            | Q(question_number__icontains=query)
             | Q(exam_context__icontains=query)
             | Q(topic_subtopic__icontains=query)
             | Q(source__icontains=query)
@@ -168,6 +169,29 @@ def question_list(request, pk):
             "incorrect_count": incorrect_count,
             "accuracy": accuracy,
             "pending_reviews": pending_reviews,
+            "page_size": paginator.per_page,
+        },
+    )
+
+
+def question_detail(request, pk, question_id):
+    competition = get_object_or_404(Competition, pk=pk)
+    question = get_object_or_404(
+        QuestionRecord.objects.select_related(
+            "competition_discipline__discipline",
+            "competition_discipline__competition",
+            "lesson",
+        ),
+        pk=question_id,
+        competition_discipline__competition=competition,
+    )
+    return render(
+        request,
+        "questions/question_detail.html",
+        {
+            "competition": competition,
+            "active_tab": "questions",
+            "question": question,
         },
     )
 
@@ -324,7 +348,8 @@ def _global_question_filters(request, queryset):
 
     if query:
         queryset = queryset.filter(
-            Q(question_number__icontains=query)
+            Q(code__icontains=query)
+            | Q(question_number__icontains=query)
             | Q(exam_context__icontains=query)
             | Q(topic_subtopic__icontains=query)
             | Q(source__icontains=query)
@@ -417,6 +442,7 @@ def global_question_list(request):
             "filters": filters,
             "metrics": metrics,
             "active_global_question_tab": "list",
+            "page_size": paginator.per_page,
         },
     )
 
