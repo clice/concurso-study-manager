@@ -1,6 +1,19 @@
 from django.db import models
 
 
+class ExamBoard(models.Model):
+    name = models.CharField("nome", max_length=180, unique=True)
+    acronym = models.CharField("sigla", max_length=40, unique=True)
+
+    class Meta:
+        ordering = ["acronym"]
+        verbose_name = "banca"
+        verbose_name_plural = "bancas"
+
+    def __str__(self):
+        return f"{self.acronym} — {self.name}"
+
+
 class Discipline(models.Model):
     name = models.CharField(max_length=160, unique=True)
 
@@ -23,18 +36,25 @@ class Competition(models.Model):
     name = models.CharField("nome do concurso", max_length=200)
     organization = models.CharField("órgão", max_length=180)
     role = models.CharField("cargo", max_length=200)
-    board = models.CharField("banca", max_length=120, blank=True)
-    notice_number = models.CharField("edital", max_length=120, blank=True)
+    board = models.ForeignKey(
+        ExamBoard,
+        verbose_name="banca",
+        on_delete=models.PROTECT,
+        related_name="competitions",
+        null=True,
+        blank=True,
+    )
     initial_salary = models.DecimalField(
         "salário inicial", max_digits=12, decimal_places=2, null=True, blank=True
     )
     benefits = models.TextField("benefícios", blank=True)
-    fee = models.DecimalField("taxa", max_digits=8, decimal_places=2, null=True, blank=True)
-    registration_start = models.DateTimeField("início das inscrições", null=True, blank=True)
-    registration_end = models.DateTimeField("fim das inscrições", null=True, blank=True)
-    exam_date = models.DateField("data principal da prova", null=True, blank=True)
-    exam_time = models.TimeField("horário principal da prova", null=True, blank=True)
-    validity = models.CharField("validade", max_length=220, blank=True)
+    fee = models.DecimalField(
+        "taxa de inscrição", max_digits=8, decimal_places=2, null=True, blank=True
+    )
+    registration_start = models.DateField("início das inscrições", null=True, blank=True)
+    registration_end = models.DateField("fim das inscrições", null=True, blank=True)
+    exam_date = models.DateField("data da prova", null=True, blank=True)
+    exam_time = models.TimeField("horário da prova", null=True, blank=True)
     location = models.CharField("localidade", max_length=220, blank=True)
     official_url = models.URLField("URL oficial", blank=True)
     notes = models.TextField("observações", blank=True)
