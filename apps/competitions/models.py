@@ -230,14 +230,18 @@ class SyllabusItem(models.Model):
         "item / código",
         max_length=40,
         blank=True,
-        help_text="Numeração exatamente como aparece no edital, quando houver.",
+        help_text=(
+            "Deixe vazio para gerar automaticamente. "
+            "Preencha apenas quando precisar preservar uma numeração diferente do edital."
+        ),
     )
     content = models.TextField("conteúdo do edital")
     priority = models.CharField(
         "prioridade",
         max_length=2,
         choices=CompetitionDiscipline.Priority.choices,
-        default=CompetitionDiscipline.Priority.P2,
+        null=True,
+        blank=True,
     )
     parent = models.ForeignKey(
         "self",
@@ -256,6 +260,51 @@ class SyllabusItem(models.Model):
         verbose_name = "item do edital"
         verbose_name_plural = "itens do edital"
 
+    @property
+    def effective_priority(self):
+        return self.priority or self.competition_discipline.priority
+
+    @property
+    def inherits_priority(self):
+        return not bool(self.priority)
+
+    def _next_root_code(self):
+        root_codes = (
+            SyllabusItem.objects.filter(
+                competition_discipline_id=self.competition_discipline_id,
+                parent__isnull=True,
+            )
+            .exclude(pk=self.pk)
+            .values_list("item_code", flat=True)
+        )
+        numeric_codes = [
+            int(code)
+            for code in root_codes
+            if code and str(code).isdigit()
+        ]
+        return str((max(numeric_codes) if numeric_codes else 0) + 1)
+
+    def _next_child_code(self):
+        if not self.parent_id or not self.parent or not self.parent.item_code:
+            return self._next_root_code()
+
+        prefix = f"{self.parent.item_code}."
+        sibling_codes = (
+            SyllabusItem.objects.filter(parent_id=self.parent_id)
+            .exclude(pk=self.pk)
+            .values_list("item_code", flat=True)
+        )
+        suffixes = []
+        for code in sibling_codes:
+            if not code or not str(code).startswith(prefix):
+                continue
+            suffix = str(code)[len(prefix):]
+            if suffix.isdigit():
+                suffixes.append(int(suffix))
+
+        next_suffix = (max(suffixes) if suffixes else 0) + 1
+        return f"{self.parent.item_code}.{next_suffix}"
+
     def save(self, *args, **kwargs):
         if not self.position and self.competition_discipline_id:
             current_max = (
@@ -267,6 +316,14 @@ class SyllabusItem(models.Model):
                 or 0
             )
             self.position = current_max + 1
+
+        if not self.item_code and self.competition_discipline_id:
+            self.item_code = (
+                self._next_child_code()
+                if self.parent_id
+                else self._next_root_code()
+            )
+
         super().save(*args, **kwargs)
 
     def __str__(self):
