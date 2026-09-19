@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Edital | {{ competition.name }}{% endblock %}
+
+{% block content %}
+<div class="page-heading mb-3">
+    <div>
+        <p class="eyebrow mb-1">CONTEÚDO PROGRAMÁTICO</p>
+        <h1 class="h2 mb-1">Edital verticalizado</h1>
+        <p class="text-body-secondary mb-0">{{ competition.name }}</p>
+    </div>
+    <a class="btn btn-outline-secondary" href="{% url 'competitions:detail' competition.pk %}">Voltar à visão geral</a>
+</div>
+
+{% include "competitions/competition_nav.html" %}
+
+<section class="content-card">
+    <div class="content-card-header mb-3">
+        <div>
+            <h2 class="h4 mb-1">Conteúdo por disciplina</h2>
+            <p class="text-body-secondary small mb-0">A numeração é gerada automaticamente e os itens ficam organizados dentro da disciplina correspondente.</p>
+        </div>
+        <div class="syllabus-metrics">
+            <span><strong>{{ syllabus_discipline_count }}</strong> disciplinas</span>
+            <span><strong>{{ total_syllabus_items }}</strong> itens</span>
+        </div>
+    </div>
+
+    {% if syllabus_blocks %}
+        <div class="syllabus-accordion">
+            {% for block in syllabus_blocks %}
+                <details class="syllabus-discipline" id="edital-{{ block.link.pk }}" name="syllabus-accordion" {% if block.open %}open{% endif %}>
+                    <summary class="syllabus-discipline-summary">
+                        <div>
+                            <strong>{{ block.link.discipline.name }}</strong>
+                            <span class="syllabus-discipline-meta">{{ block.link.get_knowledge_area_display }} · {{ block.link.priority }}</span>
+                        </div>
+                        <span class="syllabus-count">{{ block.item_count }} itens</span>
+                    </summary>
+
+                    <div class="syllabus-discipline-body">
+                        <div class="d-flex justify-content-end mb-3">
+                            <a class="btn btn-sm btn-outline-secondary" href="{% url 'competitions:discipline_detail' competition.pk block.link.pk %}">Ver disciplina</a>
+                        </div>
+
+                        {% if block.items %}
+                            <div class="table-responsive">
+                                <table class="table align-middle syllabus-table mb-3">
+                                    <thead>
+                                        <tr><th>Item</th><th>Conteúdo do edital</th><th></th></tr>
+                                    </thead>
+                                    <tbody data-sortable-list data-reorder-url="{% url 'competitions:syllabus_item_reorder' competition.pk block.link.pk %}">
+                                        {% for item in block.items %}
+                                            <tr class="sortable-item {% if item.parent_id %}syllabus-child-row{% endif %}" data-sortable-item data-id="{{ item.id }}">
+                                                <td class="syllabus-code-cell">
+                                                    <div class="d-flex align-items-center gap-2">
+                                                        <button class="drag-handle drag-handle-table" type="button" draggable="true" data-drag-handle aria-label="Reordenar item {{ item.item_code|default:item.pk }}" title="Arraste para mudar a ordem">☰</button>
+                                                        <div>
+                                                            <strong>{{ item.item_code|default:"—" }}</strong>
+                                                            {% if item.parent_id %}
+                                                                <span class="syllabus-parent-note">subitem{% if item.parent.item_code %} de {{ item.parent.item_code }}{% endif %}</span>
+                                                            {% endif %}
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>{{ item.content }}</td>
+                                                <td class="text-end"><a class="btn btn-sm btn-outline-secondary" href="{% url 'competitions:syllabus_item_edit' competition.pk item.pk %}">Editar</a></td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="soft-empty mb-3">Nenhum item do edital cadastrado para esta disciplina.</div>
+                        {% endif %}
+
+                        <details {% if open_syllabus_link_id == block.link.pk %}open{% endif %} data-collapsible-form data-open-label="Cancelar item" data-closed-label="Adicionar item">
+                            <summary class="btn btn-sm btn-outline-primary">Adicionar item</summary>
+                            <form class="nested-form mt-3" method="post" action="{% url 'competitions:syllabus_item_add' competition.pk block.link.pk %}">
+                                {% csrf_token %}
+                                <div class="row g-3">
+                                    <div class="col-12 col-md-4">{% include "competitions/field.html" with field=block.form.parent %}</div>
+                                    <div class="col-12 col-md-8">{% include "competitions/field.html" with field=block.form.content %}</div>
+                                </div>
+                                <button class="btn btn-primary mt-3" type="submit">Salvar item</button>
+                            </form>
+                        </details>
+                    </div>
+                </details>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="soft-empty">Cadastre pelo menos uma disciplina para começar a verticalizar o edital.</div>
+    {% endif %}
+</section>
+{% endblock %}
