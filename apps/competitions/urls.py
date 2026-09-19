@@ -9,7 +9,6 @@ urlpatterns = [
     path("<int:pk>/", views.competition_detail, name="detail"),
     path("<int:pk>/editar/", views.competition_edit, name="edit"),
     path("<int:pk>/estrutura/", views.competition_structure, name="structure"),
-    path("<int:pk>/aulas/", views.competition_lessons, name="lessons"),
     path("<int:pk>/edital/", views.competition_syllabus, name="syllabus"),
     path("<int:pk>/dashboard/", views.competition_dashboard, name="dashboard"),
     path(
