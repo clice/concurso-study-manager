@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Max
 
 
 class ExamBoard(models.Model):
@@ -85,6 +86,8 @@ class CompetitionStage(models.Model):
         ESSAY = "essay", "Prova discursiva"
         PRACTICAL = "practical", "Prova prática"
         TITLES = "titles", "Avaliação de títulos"
+        HETEROIDENTIFICATION = "heteroidentification", "Heteroidentificação"
+        BIOPSYCHOSOCIAL = "biopsychosocial", "Avaliação biopsicossocial"
         PHYSICAL = "physical", "Teste de aptidão física"
         MEDICAL = "medical", "Avaliação médica"
         PSYCHOLOGICAL = "psychological", "Avaliação psicológica"
@@ -95,13 +98,10 @@ class CompetitionStage(models.Model):
     competition = models.ForeignKey(
         Competition, on_delete=models.CASCADE, related_name="stages"
     )
-    name = models.CharField("nome da etapa", max_length=180)
     stage_type = models.CharField(
-        "tipo", max_length=24, choices=StageType.choices, default=StageType.OBJECTIVE
+        "etapa", max_length=24, choices=StageType.choices, default=StageType.OBJECTIVE
     )
-    position = models.PositiveIntegerField(
-        "posição", default=1, help_text="Ordem em que a etapa aparece no concurso."
-    )
+    position = models.PositiveIntegerField("posição", default=0, editable=False)
     scheduled_date = models.DateField("data", null=True, blank=True)
     scheduled_time = models.TimeField("horário", null=True, blank=True)
     eliminatory = models.BooleanField("eliminatória", default=True)
@@ -118,15 +118,20 @@ class CompetitionStage(models.Model):
         ordering = ["position", "id"]
         verbose_name = "etapa do concurso"
         verbose_name_plural = "etapas do concurso"
-        constraints = [
-            models.UniqueConstraint(
-                fields=["competition", "position"],
-                name="unique_competition_stage_position",
+
+    def save(self, *args, **kwargs):
+        if not self.position and self.competition_id:
+            current_max = (
+                CompetitionStage.objects.filter(competition_id=self.competition_id)
+                .aggregate(max_position=Max("position"))
+                .get("max_position")
+                or 0
             )
-        ]
+            self.position = current_max + 1
+        super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.competition} — {self.name}"
+        return f"{self.competition} — {self.get_stage_type_display()}"
 
 
 class CompetitionDiscipline(models.Model):
@@ -141,11 +146,6 @@ class CompetitionDiscipline(models.Model):
 
     competition = models.ForeignKey(
         Competition, on_delete=models.CASCADE, related_name="discipline_links"
-    )
-    stage = models.ForeignKey(
-        CompetitionStage,
-        on_delete=models.CASCADE,
-        related_name="discipline_links",
     )
     discipline = models.ForeignKey(Discipline, on_delete=models.PROTECT)
     knowledge_area = models.CharField(
@@ -163,18 +163,30 @@ class CompetitionDiscipline(models.Model):
     max_score = models.DecimalField(
         "pontuação máxima", max_digits=8, decimal_places=2, null=True, blank=True
     )
-    position = models.PositiveIntegerField(
-        "posição", default=1, help_text="Ordem de exibição dentro da etapa."
+    minimum_score = models.DecimalField(
+        "pontuação mínima", max_digits=8, decimal_places=2, null=True, blank=True
     )
+    position = models.PositiveIntegerField("posição", default=0, editable=False)
 
     class Meta:
-        ordering = ["stage__position", "position", "discipline__name"]
+        ordering = ["position", "discipline__name"]
         constraints = [
             models.UniqueConstraint(
-                fields=["competition", "stage", "discipline"],
-                name="unique_competition_stage_discipline",
+                fields=["competition", "discipline"],
+                name="unique_competition_discipline",
             )
         ]
 
+    def save(self, *args, **kwargs):
+        if not self.position and self.competition_id:
+            current_max = (
+                CompetitionDiscipline.objects.filter(competition_id=self.competition_id)
+                .aggregate(max_position=Max("position"))
+                .get("max_position")
+                or 0
+            )
+            self.position = current_max + 1
+        super().save(*args, **kwargs)
+
     def __str__(self):
-        return f"{self.competition} — {self.stage} — {self.discipline}"
+        return f"{self.competition} — {self.discipline}"
