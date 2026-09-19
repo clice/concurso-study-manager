@@ -711,13 +711,13 @@ class CompetitionNavigationTests(TestCase):
 
     def test_lessons_and_dashboard_have_dedicated_routes(self):
         lessons = self.client.get(
-            reverse("competitions:lessons", kwargs={"pk": self.competition.pk})
+            reverse("studies:lesson_list", kwargs={"pk": self.competition.pk})
         )
         dashboard = self.client.get(
             reverse("competitions:dashboard", kwargs={"pk": self.competition.pk})
         )
 
         self.assertEqual(lessons.status_code, 200)
-        self.assertContains(lessons, "A estrutura de aulas vem agora")
+        self.assertContains(lessons, "Lista de aulas")
         self.assertEqual(dashboard.status_code, 200)
         self.assertContains(dashboard, "Indicadores e gráficos ficarão aqui")
