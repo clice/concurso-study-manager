@@ -1,5 +1,5 @@
 from django.core.paginator import Paginator
-from django.db.models import Count, Q
+from django.db.models import Count, Min, Q
 from django.db.models.functions import TruncMonth
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -479,8 +479,9 @@ def global_question_dashboard(request):
                 "id",
                 filter=Q(result=QuestionRecord.Result.INCORRECT),
             ),
+            first_answered=Min("answered_date"),
         )
-        .order_by("competition_discipline__competition__name")
+        .order_by("first_answered", "competition_discipline__competition__name")
     )
     for row in contest_rows:
         valid = row["correct"] + row["incorrect"]
