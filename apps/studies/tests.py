@@ -448,7 +448,7 @@ class CompetitionDashboardTests(TestCase):
         )
         completed.syllabus_items.add(self.dev_item_1)
 
-        Lesson.objects.create(
+        in_progress = Lesson.objects.create(
             competition_discipline=self.systems_link,
             title="DevOps",
             status=Lesson.Status.IN_PROGRESS,
@@ -456,6 +456,7 @@ class CompetitionDashboardTests(TestCase):
             correct_answers=3,
             suggested_week=1,
         )
+        in_progress.syllabus_items.add(self.dev_item_1)
 
         Lesson.objects.create(
             competition_discipline=self.portuguese_link,
@@ -484,6 +485,15 @@ class CompetitionDashboardTests(TestCase):
         self.assertEqual(response.context["total_syllabus_items"], 3)
         self.assertEqual(response.context["covered_syllabus_items"], 1)
         self.assertEqual(response.context["syllabus_coverage"], 33.3)
+
+        systems_row = next(
+            row
+            for row in response.context["discipline_rows"]
+            if row["name"] == "Desenvolvimento de Sistemas"
+        )
+        self.assertEqual(systems_row["syllabus_total"], 2)
+        self.assertEqual(systems_row["syllabus_covered"], 1)
+        self.assertEqual(systems_row["syllabus_coverage"], 50.0)
 
         chart_data = response.context["chart_data"]
         self.assertEqual(
