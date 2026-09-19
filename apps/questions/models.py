@@ -44,7 +44,7 @@ class QuestionRecord(models.Model):
         max_length=300,
         blank=True,
     )
-    question_number = models.CharField("questão", max_length=120)
+    question_number = models.CharField("questão", max_length=220)
     topic_subtopic = models.CharField(
         "tema / subtema",
         max_length=500,
@@ -69,7 +69,7 @@ class QuestionRecord(models.Model):
         null=True,
         blank=True,
     )
-    question_url = models.URLField("URL da questão", blank=True)
+    question_url = models.URLField("URL da questão", max_length=500, blank=True)
     url_pending = models.BooleanField(
         "URL pendente de identificação",
         default=False,
