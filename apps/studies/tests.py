@@ -391,3 +391,111 @@ class DataprevLessonImportTests(TestCase):
         )
 
         self.assertFalse(Lesson.objects.exists())
+
+
+
+class CompetitionDashboardTests(TestCase):
+    def setUp(self):
+        board, _ = ExamBoard.objects.get_or_create(
+            acronym="FGV",
+            defaults={"name": "Fundação Getulio Vargas"},
+        )
+        self.competition = Competition.objects.create(
+            name="DATAPREV 2026",
+            organization="DATAPREV",
+            role="ATI — Desenvolvimento de Software",
+            board=board,
+            status=Competition.Status.ACTIVE,
+            exam_date=date(2026, 10, 11),
+        )
+
+        portuguese = Discipline.objects.create(name="Língua Portuguesa")
+        systems = Discipline.objects.create(name="Desenvolvimento de Sistemas")
+
+        self.portuguese_link = CompetitionDiscipline.objects.create(
+            competition=self.competition,
+            discipline=portuguese,
+            knowledge_area=CompetitionDiscipline.KnowledgeArea.GENERAL,
+            priority=CompetitionDiscipline.Priority.P1,
+        )
+        self.systems_link = CompetitionDiscipline.objects.create(
+            competition=self.competition,
+            discipline=systems,
+            knowledge_area=CompetitionDiscipline.KnowledgeArea.SPECIFIC,
+            priority=CompetitionDiscipline.Priority.P1,
+        )
+
+        self.pt_item = SyllabusItem.objects.create(
+            competition_discipline=self.portuguese_link,
+            content="Classes de palavras.",
+        )
+        self.dev_item_1 = SyllabusItem.objects.create(
+            competition_discipline=self.systems_link,
+            content="Testes de software.",
+        )
+        self.dev_item_2 = SyllabusItem.objects.create(
+            competition_discipline=self.systems_link,
+            content="DevOps.",
+        )
+
+        completed = Lesson.objects.create(
+            competition_discipline=self.systems_link,
+            title="JUnit",
+            status=Lesson.Status.COMPLETED,
+            questions_done=10,
+            correct_answers=8,
+            suggested_week=1,
+        )
+        completed.syllabus_items.add(self.dev_item_1)
+
+        Lesson.objects.create(
+            competition_discipline=self.systems_link,
+            title="DevOps",
+            status=Lesson.Status.IN_PROGRESS,
+            questions_done=5,
+            correct_answers=3,
+            suggested_week=1,
+        )
+
+        Lesson.objects.create(
+            competition_discipline=self.portuguese_link,
+            title="Classes de Palavras",
+            status=Lesson.Status.NOT_STARTED,
+            suggested_week=2,
+        )
+
+    def test_dashboard_uses_real_lesson_question_and_syllabus_data(self):
+        response = self.client.get(
+            reverse(
+                "competitions:dashboard",
+                kwargs={"pk": self.competition.pk},
+            )
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["total_lessons"], 3)
+        self.assertEqual(response.context["completed_lessons"], 1)
+        self.assertEqual(response.context["in_progress_lessons"], 1)
+        self.assertEqual(response.context["not_started_lessons"], 1)
+        self.assertEqual(response.context["lesson_progress"], 33.3)
+        self.assertEqual(response.context["total_questions"], 15)
+        self.assertEqual(response.context["total_correct"], 11)
+        self.assertEqual(response.context["overall_accuracy"], 73.3)
+        self.assertEqual(response.context["total_syllabus_items"], 3)
+        self.assertEqual(response.context["covered_syllabus_items"], 1)
+        self.assertEqual(response.context["syllabus_coverage"], 33.3)
+
+        chart_data = response.context["chart_data"]
+        self.assertEqual(
+            chart_data["status"]["values"],
+            [1, 1, 1],
+        )
+        self.assertEqual(
+            chart_data["weeks"]["labels"],
+            ["Semana 1", "Semana 2"],
+        )
+
+        self.assertContains(response, "Progresso por disciplina")
+        self.assertContains(response, "Taxa de acerto por disciplina")
+        self.assertContains(response, "Aulas por semana sugerida")
+        self.assertContains(response, "competition-dashboard-data")
