@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Escolher disciplina | {{ competition.name }}{% endblock %}
+
+{% block content %}
+<div class="page-heading mb-3">
+    <div>
+        <p class="eyebrow mb-1">NOVA QUESTÃO</p>
+        <h1 class="h2 mb-1">Escolha a disciplina</h1>
+        <p class="text-body-secondary mb-0">A disciplina fica fixa no registro; a aula poderá ser vinculada depois.</p>
+    </div>
+    <a class="btn btn-outline-secondary" href="{% url 'questions:question_list' competition.pk %}">Voltar</a>
+</div>
+
+{% include "competitions/competition_nav.html" %}
+
+<div class="discipline-card-grid">
+    {% for link in discipline_links %}
+        <a class="discipline-card" href="{% url 'questions:question_create' competition.pk link.pk %}">
+            <div class="d-flex align-items-start justify-content-between gap-3">
+                <div>
+                    <strong class="discipline-card-title">{{ link.discipline.name }}</strong>
+                    <span class="discipline-card-subtitle">{{ link.get_knowledge_area_display }}</span>
+                </div>
+                <span class="priority-pill priority-{{ link.priority|lower }}">{{ link.priority }}</span>
+            </div>
+        </a>
+    {% empty %}
+        <div class="soft-empty">Nenhuma disciplina cadastrada neste concurso.</div>
+    {% endfor %}
+</div>
+{% endblock %}
