@@ -74,9 +74,12 @@
         <div>
             <p class="eyebrow mb-1">AULAS</p>
             <h2 class="h4 mb-1">Aulas da disciplina</h2>
-            <p class="text-body-secondary small mb-0">A estrutura de aulas será adicionada na próxima etapa do desenvolvimento.</p>
+            <p class="text-body-secondary small mb-0">{{ lesson_count }} aula{{ lesson_count|pluralize }} cadastrada{{ lesson_count|pluralize }} nesta disciplina.</p>
         </div>
-        <a class="btn btn-sm btn-outline-primary" href="{% url 'competitions:lessons' competition.pk %}">Ir para Aulas</a>
+        <div class="d-flex flex-wrap gap-2">
+            <a class="btn btn-sm btn-outline-primary" href="{% url 'studies:lesson_list' competition.pk %}?disciplina={{ link.pk }}">Ver aulas</a>
+            <a class="btn btn-sm btn-primary" href="{% url 'studies:lesson_create' competition.pk %}?disciplina={{ link.pk }}">Adicionar aula</a>
+        </div>
     </div>
 </section>
 {% endblock %}
