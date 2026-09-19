@@ -100,7 +100,7 @@
         </div>
     </section>
 
-    <section class="content-card dashboard-chart-card dashboard-chart-wide">
+    <section class="content-card dashboard-chart-card dashboard-chart-half">
         <div class="dashboard-chart-heading">
             <div>
                 <p class="eyebrow mb-1">EDITAL</p>
@@ -113,7 +113,7 @@
         </div>
     </section>
 
-    <section class="content-card dashboard-chart-card dashboard-chart-wide">
+    <section class="content-card dashboard-chart-card dashboard-chart-half">
         <div class="dashboard-chart-heading">
             <div>
                 <p class="eyebrow mb-1">PLANEJAMENTO</p>
@@ -121,7 +121,7 @@
                 <p class="text-body-secondary small mb-0">Compara o total previsto com quantas aulas já estão concluídas em cada semana.</p>
             </div>
         </div>
-        <div class="dashboard-chart dashboard-chart-weekly">
+        <div class="dashboard-chart dashboard-chart-weekly dashboard-chart-compact">
             <canvas id="weekly-chart"></canvas>
         </div>
     </section>
@@ -183,6 +183,25 @@
                     </tr>
                 {% endfor %}
             </tbody>
+            <tfoot>
+                <tr class="dashboard-total-row">
+                    <td><strong>Total</strong></td>
+                    <td><strong>{{ completed_lessons }} / {{ total_lessons }}</strong></td>
+                    <td>
+                        <div class="dashboard-progress-cell">
+                            <div class="dashboard-progress-track">
+                                <span style="width: {% widthratio lesson_progress 100 100 %}%"></span>
+                            </div>
+                            <strong>{{ lesson_progress|floatformat:"-1" }}%</strong>
+                        </div>
+                    </td>
+                    <td><strong>{{ total_questions }}</strong></td>
+                    <td><strong>{{ total_correct }}</strong></td>
+                    <td><strong>{% if overall_accuracy is not None %}{{ overall_accuracy|floatformat:"-1" }}%{% else %}—{% endif %}</strong></td>
+                    <td><strong>{{ covered_syllabus_items }} / {{ total_syllabus_items }}</strong></td>
+                    <td><strong>{{ syllabus_coverage|floatformat:"-1" }}%</strong></td>
+                </tr>
+            </tfoot>
         </table>
     </div>
 </section>
