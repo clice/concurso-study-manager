@@ -13,7 +13,9 @@ RUN python -m pip install --upgrade pip \
 
 COPY . .
 
-RUN chmod +x /app/docker/entrypoint.sh
+RUN chmod +x /app/docker/entrypoint.sh \
+    && python manage.py check \
+    && python manage.py makemigrations --check --dry-run
 
 EXPOSE 8000
 
