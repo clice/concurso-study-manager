@@ -1,10 +1,11 @@
 from django.core.paginator import Paginator
 from django.db.models import Count, Q
+from django.db.models.functions import TruncMonth
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.dateparse import parse_date
 
-from apps.competitions.models import Competition, CompetitionDiscipline
+from apps.competitions.models import Competition, CompetitionDiscipline, Discipline
 from apps.studies.models import Lesson
 
 from .forms import QuestionRecordForm
@@ -265,5 +266,335 @@ def question_edit(request, pk, question_id):
             "form": form,
             "page_title": f"Editar {question.question_number}",
             "submit_label": "Salvar alterações",
+        },
+    )
+
+
+
+def _global_question_filters(request, queryset):
+    competition_id = request.GET.get("concurso", "").strip()
+    discipline_id = request.GET.get("disciplina", "").strip()
+    result = request.GET.get("resultado", "").strip()
+    review = request.GET.get("revisao", "").strip()
+    board = request.GET.get("banca", "").strip()
+    start_date = request.GET.get("inicio", "").strip()
+    end_date = request.GET.get("fim", "").strip()
+    query = request.GET.get("q", "").strip()
+
+    if competition_id.isdigit():
+        queryset = queryset.filter(
+            competition_discipline__competition_id=int(competition_id)
+        )
+
+    if discipline_id.isdigit():
+        queryset = queryset.filter(
+            competition_discipline__discipline_id=int(discipline_id)
+        )
+
+    valid_results = {value for value, _ in QuestionRecord.Result.choices}
+    if result in valid_results:
+        queryset = queryset.filter(result=result)
+
+    if review == "required":
+        queryset = queryset.filter(review_required=True)
+    elif review == "pending":
+        queryset = queryset.filter(
+            review_required=True,
+        ).exclude(
+            review_status=QuestionRecord.ReviewStatus.COMPLETED
+        )
+    elif review == "completed":
+        queryset = queryset.filter(
+            review_required=True,
+            review_status=QuestionRecord.ReviewStatus.COMPLETED,
+        )
+    elif review == "not_required":
+        queryset = queryset.filter(review_required=False)
+
+    if board:
+        queryset = queryset.filter(board=board)
+
+    parsed_start = parse_date(start_date) if start_date else None
+    if parsed_start:
+        queryset = queryset.filter(answered_date__gte=parsed_start)
+
+    parsed_end = parse_date(end_date) if end_date else None
+    if parsed_end:
+        queryset = queryset.filter(answered_date__lte=parsed_end)
+
+    if query:
+        queryset = queryset.filter(
+            Q(question_number__icontains=query)
+            | Q(exam_context__icontains=query)
+            | Q(topic_subtopic__icontains=query)
+            | Q(source__icontains=query)
+            | Q(observation__icontains=query)
+            | Q(competition_discipline__competition__name__icontains=query)
+            | Q(competition_discipline__discipline__name__icontains=query)
+        )
+
+    return queryset, {
+        "competition": competition_id,
+        "discipline": discipline_id,
+        "result": result,
+        "review": review,
+        "board": board,
+        "start": start_date,
+        "end": end_date,
+        "q": query,
+    }
+
+
+def _question_metrics(queryset):
+    metrics = queryset.aggregate(
+        total=Count("id"),
+        correct=Count(
+            "id",
+            filter=Q(result=QuestionRecord.Result.CORRECT),
+        ),
+        incorrect=Count(
+            "id",
+            filter=Q(result=QuestionRecord.Result.INCORRECT),
+        ),
+        not_counted=Count(
+            "id",
+            filter=Q(result=QuestionRecord.Result.NOT_COUNTED),
+        ),
+        pending_reviews=Count(
+            "id",
+            filter=Q(review_required=True)
+            & ~Q(review_status=QuestionRecord.ReviewStatus.COMPLETED),
+        ),
+    )
+    valid_total = (metrics["correct"] or 0) + (metrics["incorrect"] or 0)
+    metrics["accuracy"] = (
+        round(((metrics["correct"] or 0) / valid_total) * 100, 1)
+        if valid_total
+        else None
+    )
+    metrics["valid_total"] = valid_total
+    return metrics
+
+
+def global_question_list(request):
+    questions = QuestionRecord.objects.select_related(
+        "competition_discipline__competition",
+        "competition_discipline__discipline",
+        "lesson",
+    ).order_by("-answered_date", "-id")
+
+    questions, filters = _global_question_filters(request, questions)
+    metrics = _question_metrics(questions)
+
+    paginator = Paginator(questions, 50)
+    page_obj = paginator.get_page(request.GET.get("pagina"))
+
+    competitions = Competition.objects.order_by("name")
+    disciplines = (
+        Discipline.objects.filter(
+            competitiondiscipline__question_records__isnull=False
+        )
+        .distinct()
+        .order_by("name")
+    )
+    boards = list(
+        QuestionRecord.objects.exclude(board="")
+        .values_list("board", flat=True)
+        .distinct()
+        .order_by("board")
+    )
+
+    return render(
+        request,
+        "questions/global_question_list.html",
+        {
+            "questions": page_obj.object_list,
+            "page_obj": page_obj,
+            "competitions": competitions,
+            "disciplines": disciplines,
+            "boards": boards,
+            "result_choices": QuestionRecord.Result.choices,
+            "filters": filters,
+            "metrics": metrics,
+            "active_global_question_tab": "list",
+        },
+    )
+
+
+def global_question_choose_competition(request):
+    competitions = Competition.objects.order_by("exam_date", "name")
+    return render(
+        request,
+        "questions/global_question_choose_competition.html",
+        {
+            "competitions": competitions,
+            "active_global_question_tab": "list",
+        },
+    )
+
+
+def global_question_dashboard(request):
+    questions = QuestionRecord.objects.select_related(
+        "competition_discipline__competition",
+        "competition_discipline__discipline",
+    )
+    questions, filters = _global_question_filters(request, questions)
+    metrics = _question_metrics(questions)
+
+    monthly_rows = list(
+        questions.annotate(month=TruncMonth("answered_date"))
+        .values("month")
+        .annotate(
+            total=Count("id"),
+            correct=Count(
+                "id",
+                filter=Q(result=QuestionRecord.Result.CORRECT),
+            ),
+            incorrect=Count(
+                "id",
+                filter=Q(result=QuestionRecord.Result.INCORRECT),
+            ),
+        )
+        .order_by("month")
+    )
+    for row in monthly_rows:
+        valid = row["correct"] + row["incorrect"]
+        row["accuracy"] = (
+            round((row["correct"] / valid) * 100, 1)
+            if valid
+            else None
+        )
+
+    contest_rows = list(
+        questions.values(
+            "competition_discipline__competition__name"
+        )
+        .annotate(
+            total=Count("id"),
+            correct=Count(
+                "id",
+                filter=Q(result=QuestionRecord.Result.CORRECT),
+            ),
+            incorrect=Count(
+                "id",
+                filter=Q(result=QuestionRecord.Result.INCORRECT),
+            ),
+        )
+        .order_by("competition_discipline__competition__name")
+    )
+    for row in contest_rows:
+        valid = row["correct"] + row["incorrect"]
+        row["accuracy"] = (
+            round((row["correct"] / valid) * 100, 1)
+            if valid
+            else None
+        )
+
+    discipline_rows = list(
+        questions.values(
+            "competition_discipline__discipline__name"
+        )
+        .annotate(
+            total=Count("id"),
+            correct=Count(
+                "id",
+                filter=Q(result=QuestionRecord.Result.CORRECT),
+            ),
+            incorrect=Count(
+                "id",
+                filter=Q(result=QuestionRecord.Result.INCORRECT),
+            ),
+        )
+        .order_by("competition_discipline__discipline__name")
+    )
+    for row in discipline_rows:
+        valid = row["correct"] + row["incorrect"]
+        row["accuracy"] = (
+            round((row["correct"] / valid) * 100, 1)
+            if valid
+            else None
+        )
+
+    competitions_with_questions = (
+        questions.values(
+            "competition_discipline__competition_id"
+        )
+        .distinct()
+        .count()
+    )
+
+    chart_data = {
+        "months": {
+            "labels": [
+                row["month"].strftime("%m/%Y")
+                for row in monthly_rows
+                if row["month"]
+            ],
+            "questions": [
+                row["total"]
+                for row in monthly_rows
+                if row["month"]
+            ],
+            "accuracy": [
+                row["accuracy"]
+                for row in monthly_rows
+                if row["month"]
+            ],
+        },
+        "results": {
+            "labels": ["Acertos", "Erros", "Não contabilizadas"],
+            "values": [
+                metrics["correct"] or 0,
+                metrics["incorrect"] or 0,
+                metrics["not_counted"] or 0,
+            ],
+        },
+        "contests": {
+            "labels": [
+                row["competition_discipline__competition__name"]
+                for row in contest_rows
+            ],
+            "questions": [row["total"] for row in contest_rows],
+            "accuracy": [row["accuracy"] for row in contest_rows],
+        },
+        "disciplines": {
+            "labels": [
+                row["competition_discipline__discipline__name"]
+                for row in discipline_rows
+            ],
+            "questions": [row["total"] for row in discipline_rows],
+            "accuracy": [row["accuracy"] for row in discipline_rows],
+        },
+    }
+
+    competitions = Competition.objects.order_by("name")
+    disciplines = (
+        Discipline.objects.filter(
+            competitiondiscipline__question_records__isnull=False
+        )
+        .distinct()
+        .order_by("name")
+    )
+    boards = list(
+        QuestionRecord.objects.exclude(board="")
+        .values_list("board", flat=True)
+        .distinct()
+        .order_by("board")
+    )
+
+    return render(
+        request,
+        "questions/global_question_dashboard.html",
+        {
+            "metrics": metrics,
+            "competitions_with_questions": competitions_with_questions,
+            "competitions": competitions,
+            "disciplines": disciplines,
+            "boards": boards,
+            "result_choices": QuestionRecord.Result.choices,
+            "filters": filters,
+            "chart_data": chart_data,
+            "contest_rows": contest_rows,
+            "active_global_question_tab": "dashboard",
         },
     )
