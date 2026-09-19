@@ -10,6 +10,7 @@ from .models import (
     CompetitionStage,
     Discipline,
     ExamBoard,
+    SyllabusItem,
 )
 
 
@@ -323,3 +324,176 @@ class CompetitionRegistrationTests(TestCase):
 
         self.assertEqual(response.status_code, 302)
         self.assertEqual(Discipline.objects.count(), 1)
+
+
+
+class SyllabusItemTests(TestCase):
+    def setUp(self):
+        board, _ = ExamBoard.objects.get_or_create(
+            acronym="FGV",
+            defaults={"name": "Fundação Getulio Vargas"},
+        )
+        self.competition = Competition.objects.create(
+            name="DATAPREV 2026",
+            organization="DATAPREV",
+            role="ATI — Desenvolvimento de Software",
+            board=board,
+            status=Competition.Status.ACTIVE,
+        )
+        discipline = Discipline.objects.create(name="Desenvolvimento de Sistemas")
+        self.link = CompetitionDiscipline.objects.create(
+            competition=self.competition,
+            discipline=discipline,
+            knowledge_area=CompetitionDiscipline.KnowledgeArea.SPECIFIC,
+            priority=CompetitionDiscipline.Priority.P1,
+        )
+
+    def test_syllabus_items_receive_positions_automatically(self):
+        first = SyllabusItem.objects.create(
+            competition_discipline=self.link,
+            item_code="1",
+            content="Engenharia de software",
+            priority=CompetitionDiscipline.Priority.P1,
+        )
+        second = SyllabusItem.objects.create(
+            competition_discipline=self.link,
+            item_code="2",
+            content="Testes de software",
+            priority=CompetitionDiscipline.Priority.P1,
+        )
+
+        self.assertEqual(first.position, 1)
+        self.assertEqual(second.position, 2)
+
+    def test_syllabus_item_can_be_added_from_discipline_block(self):
+        response = self.client.post(
+            reverse(
+                "competitions:syllabus_item_add",
+                kwargs={"pk": self.competition.pk, "link_id": self.link.pk},
+            ),
+            {
+                f"syllabus-{self.link.pk}-item_code": "3.1",
+                f"syllabus-{self.link.pk}-content": "Testes unitários",
+                f"syllabus-{self.link.pk}-priority": CompetitionDiscipline.Priority.P1,
+                f"syllabus-{self.link.pk}-parent": "",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        item = SyllabusItem.objects.get()
+        self.assertEqual(item.item_code, "3.1")
+        self.assertEqual(item.content, "Testes unitários")
+        self.assertEqual(item.competition_discipline, self.link)
+
+    def test_syllabus_parent_must_belong_to_same_discipline(self):
+        other_discipline = Discipline.objects.create(name="Banco de Dados")
+        other_link = CompetitionDiscipline.objects.create(
+            competition=self.competition,
+            discipline=other_discipline,
+            knowledge_area=CompetitionDiscipline.KnowledgeArea.SPECIFIC,
+        )
+        foreign_parent = SyllabusItem.objects.create(
+            competition_discipline=other_link,
+            item_code="1",
+            content="Modelo relacional",
+        )
+
+        response = self.client.post(
+            reverse(
+                "competitions:syllabus_item_add",
+                kwargs={"pk": self.competition.pk, "link_id": self.link.pk},
+            ),
+            {
+                f"syllabus-{self.link.pk}-item_code": "1.1",
+                f"syllabus-{self.link.pk}-content": "Subitem inválido",
+                f"syllabus-{self.link.pk}-priority": CompetitionDiscipline.Priority.P2,
+                f"syllabus-{self.link.pk}-parent": str(foreign_parent.pk),
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            SyllabusItem.objects.filter(competition_discipline=self.link).count(),
+            0,
+        )
+
+    def test_syllabus_item_can_be_edited(self):
+        item = SyllabusItem.objects.create(
+            competition_discipline=self.link,
+            item_code="1",
+            content="Conteúdo inicial",
+            priority=CompetitionDiscipline.Priority.P2,
+        )
+
+        response = self.client.post(
+            reverse(
+                "competitions:syllabus_item_edit",
+                kwargs={"pk": self.competition.pk, "item_id": item.pk},
+            ),
+            {
+                "item_code": "1.1",
+                "content": "Conteúdo atualizado",
+                "priority": CompetitionDiscipline.Priority.P1,
+                "parent": "",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        item.refresh_from_db()
+        self.assertEqual(item.item_code, "1.1")
+        self.assertEqual(item.content, "Conteúdo atualizado")
+        self.assertEqual(item.priority, CompetitionDiscipline.Priority.P1)
+
+    def test_syllabus_items_can_be_reordered(self):
+        first = SyllabusItem.objects.create(
+            competition_discipline=self.link,
+            item_code="1",
+            content="Primeiro",
+        )
+        second = SyllabusItem.objects.create(
+            competition_discipline=self.link,
+            item_code="2",
+            content="Segundo",
+        )
+
+        response = self.client.post(
+            reverse(
+                "competitions:syllabus_item_reorder",
+                kwargs={"pk": self.competition.pk, "link_id": self.link.pk},
+            ),
+            data=f'{{"order":[{second.id},{first.id}]}}',
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        first.refresh_from_db()
+        second.refresh_from_db()
+        self.assertEqual(second.position, 1)
+        self.assertEqual(first.position, 2)
+
+    def test_competition_detail_groups_syllabus_by_discipline(self):
+        parent = SyllabusItem.objects.create(
+            competition_discipline=self.link,
+            item_code="4",
+            content="Testes de software",
+            priority=CompetitionDiscipline.Priority.P1,
+        )
+        SyllabusItem.objects.create(
+            competition_discipline=self.link,
+            item_code="4.1",
+            content="Testes unitários",
+            priority=CompetitionDiscipline.Priority.P1,
+            parent=parent,
+        )
+
+        response = self.client.get(
+            reverse("competitions:detail", kwargs={"pk": self.competition.pk})
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Edital verticalizado")
+        self.assertContains(response, "Desenvolvimento de Sistemas")
+        self.assertContains(response, "4.1")
+        self.assertContains(response, "subitem de 4")
+        self.assertEqual(response.context["total_syllabus_items"], 2)
+        self.assertEqual(response.context["syllabus_discipline_count"], 1)
