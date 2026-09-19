@@ -34,9 +34,9 @@
     </div>
 
     <div class="dashboard-kpi">
-        <span>Cobertura do edital</span>
+        <span>Edital mapeado</span>
         <strong>{{ covered_syllabus_items }} / {{ total_syllabus_items }}</strong>
-        <small>{{ syllabus_coverage|floatformat:"-1" }}% dos itens vinculados a aulas</small>
+        <small>{{ syllabus_coverage|floatformat:"-1" }}% dos itens têm ao menos uma aula vinculada</small>
     </div>
 
     <div class="dashboard-kpi">
@@ -87,7 +87,7 @@
         </div>
     </section>
 
-    <section class="content-card dashboard-chart-card">
+    <section class="content-card dashboard-chart-card dashboard-chart-accuracy">
         <div class="dashboard-chart-heading">
             <div>
                 <p class="eyebrow mb-1">QUESTÕES</p>
@@ -104,8 +104,8 @@
         <div class="dashboard-chart-heading">
             <div>
                 <p class="eyebrow mb-1">EDITAL</p>
-                <h2 class="h5 mb-1">Cobertura por disciplina</h2>
-                <p class="text-body-secondary small mb-0">Itens do edital que já possuem ao menos uma aula vinculada.</p>
+                <h2 class="h5 mb-1">Mapeamento do edital por disciplina</h2>
+                <p class="text-body-secondary small mb-0">Percentual de itens do edital que possuem ao menos uma aula vinculada. Não representa conteúdo já estudado.</p>
             </div>
         </div>
         <div class="dashboard-chart dashboard-chart-tall">
@@ -146,8 +146,8 @@
                     <th>Questões</th>
                     <th>Acertos</th>
                     <th>% acerto</th>
-                    <th>Edital</th>
-                    <th>Cobertura</th>
+                    <th>Itens mapeados</th>
+                    <th>Mapeamento</th>
                 </tr>
             </thead>
             <tbody>
