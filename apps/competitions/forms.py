@@ -1,3 +1,5 @@
+from decimal import Decimal, InvalidOperation
+
 from django import forms
 from django.db import transaction
 
@@ -12,48 +14,95 @@ class TimeInput(forms.TimeInput):
     input_type = "time"
 
 
-class DateTimeLocalInput(forms.DateTimeInput):
-    input_type = "datetime-local"
+class BRLCurrencyField(forms.CharField):
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("required", False)
+        kwargs.setdefault(
+            "widget",
+            forms.TextInput(
+                attrs={
+                    "class": "form-control money-input",
+                    "inputmode": "numeric",
+                    "autocomplete": "off",
+                    "placeholder": "R$ 0,00",
+                }
+            ),
+        )
+        super().__init__(*args, **kwargs)
+
+    def prepare_value(self, value):
+        if value in (None, ""):
+            return ""
+        if isinstance(value, str) and ("R$" in value or "," in value):
+            return value
+        try:
+            amount = Decimal(str(value))
+        except (InvalidOperation, TypeError, ValueError):
+            return value
+        integer, decimal = f"{amount:.2f}".split(".")
+        groups = []
+        while integer:
+            groups.append(integer[-3:])
+            integer = integer[:-3]
+        return f"R$ {'.'.join(reversed(groups))},{decimal}"
+
+    def clean(self, value):
+        value = super().clean(value)
+        if not value:
+            return None
+
+        normalized = (
+            value.replace("R$", "")
+            .replace(" ", "")
+            .replace(" ", "")
+            .replace(".", "")
+            .replace(",", ".")
+        )
+        try:
+            return Decimal(normalized).quantize(Decimal("0.01"))
+        except InvalidOperation as exc:
+            raise forms.ValidationError("Informe um valor monetário válido.") from exc
 
 
 class CompetitionForm(forms.ModelForm):
+    initial_salary = BRLCurrencyField(label="Salário inicial")
+    fee = BRLCurrencyField(label="Taxa de inscrição")
+
     class Meta:
         model = Competition
         fields = [
             "name",
             "organization",
             "role",
-            "notice_number",
             "board",
+            "location",
+            "status",
             "initial_salary",
-            "benefits",
             "fee",
             "registration_start",
             "registration_end",
+            "benefits",
             "exam_date",
             "exam_time",
-            "validity",
-            "location",
             "official_url",
-            "status",
             "notes",
         ]
         widgets = {
             "benefits": forms.Textarea(attrs={"rows": 3}),
             "notes": forms.Textarea(attrs={"rows": 4}),
-            "registration_start": DateTimeLocalInput(format="%Y-%m-%dT%H:%M"),
-            "registration_end": DateTimeLocalInput(format="%Y-%m-%dT%H:%M"),
+            "registration_start": DateInput(),
+            "registration_end": DateInput(),
             "exam_date": DateInput(),
             "exam_time": TimeInput(),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["registration_start"].input_formats = ["%Y-%m-%dT%H:%M"]
-        self.fields["registration_end"].input_formats = ["%Y-%m-%dT%H:%M"]
-        for field in self.fields.values():
-            field.widget.attrs.setdefault("class", "form-control")
-        self.fields["status"].widget.attrs["class"] = "form-select"
+        for name, field in self.fields.items():
+            if name in {"board", "status"}:
+                field.widget.attrs["class"] = "form-select"
+            else:
+                field.widget.attrs.setdefault("class", "form-control")
 
 
 class CompetitionStageForm(forms.ModelForm):
