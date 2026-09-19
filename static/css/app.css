@@ -1154,3 +1154,96 @@ details > summary::-webkit-details-marker {
     line-height: 1.35;
     margin-left: 2.25rem;
 }
+
+
+.question-metrics-global {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.global-question-filters {
+    align-items: end;
+    display: grid;
+    gap: .75rem;
+    grid-template-columns: 1.1fr 1.1fr .8fr .85fr 1fr .8fr .8fr 1.3fr auto;
+}
+
+.global-question-dashboard-filters {
+    align-items: end;
+    display: grid;
+    gap: .75rem;
+    grid-template-columns: 1.25fr 1.25fr .9fr .8fr .8fr auto;
+}
+
+.question-dashboard-kpis {
+    display: grid;
+    gap: .75rem;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.question-dashboard-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+}
+
+.question-dashboard-chart-wide {
+    grid-column: 1 / -1;
+}
+
+.question-dashboard-chart-small {
+    grid-column: span 4;
+}
+
+.question-dashboard-chart-large {
+    grid-column: span 8;
+}
+
+.question-dashboard-chart {
+    min-height: 300px;
+    position: relative;
+}
+
+.question-dashboard-chart-tall {
+    min-height: 360px;
+}
+
+.question-dashboard-donut {
+    margin-inline: auto;
+    max-width: 420px;
+}
+
+@media (max-width: 1400px) {
+    .global-question-filters {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .global-question-dashboard-filters {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 992px) {
+    .question-metrics-global,
+    .question-dashboard-kpis {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .question-dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .question-dashboard-chart-wide,
+    .question-dashboard-chart-small,
+    .question-dashboard-chart-large {
+        grid-column: auto;
+    }
+}
+
+@media (max-width: 576px) {
+    .global-question-filters,
+    .global-question-dashboard-filters,
+    .question-metrics-global,
+    .question-dashboard-kpis {
+        grid-template-columns: 1fr;
+    }
+}
