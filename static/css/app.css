@@ -875,7 +875,11 @@ details > summary::-webkit-details-marker {
     grid-column: 1 / -1;
 }
 
-.dashboard-chart-card:not(.dashboard-chart-wide):not(.dashboard-chart-accuracy) {
+.dashboard-chart-half {
+    grid-column: span 6;
+}
+
+.dashboard-chart-card:not(.dashboard-chart-wide):not(.dashboard-chart-half):not(.dashboard-chart-accuracy) {
     grid-column: span 4;
 }
 
@@ -902,7 +906,11 @@ details > summary::-webkit-details-marker {
 }
 
 .dashboard-chart-weekly {
-    min-height: 320px;
+    min-height: 300px;
+}
+
+.dashboard-chart-compact {
+    min-height: 270px;
 }
 
 .dashboard-summary-table th {
@@ -916,6 +924,11 @@ details > summary::-webkit-details-marker {
 .dashboard-summary-table td {
     font-size: .84rem;
     vertical-align: middle;
+}
+
+.dashboard-total-row > * {
+    background: #f8fafc !important;
+    border-top: 2px solid var(--line);
 }
 
 .dashboard-discipline-meta {
@@ -962,7 +975,8 @@ details > summary::-webkit-details-marker {
     }
 
     .dashboard-chart-wide,
-    .dashboard-chart-card:not(.dashboard-chart-wide):not(.dashboard-chart-accuracy),
+    .dashboard-chart-half,
+    .dashboard-chart-card:not(.dashboard-chart-wide):not(.dashboard-chart-half):not(.dashboard-chart-accuracy),
     .dashboard-chart-accuracy {
         grid-column: auto;
     }
