@@ -1,5 +1,7 @@
 from datetime import date
+from io import StringIO
 
+from django.core.management import call_command
 from django.test import TestCase
 from django.urls import reverse
 
@@ -342,3 +344,115 @@ class GlobalQuestionViewsTests(TestCase):
         self.assertContains(response, "Escolha o concurso")
         self.assertContains(response, "DATAPREV 2026")
         self.assertContains(response, "Outro Concurso 2027")
+
+
+
+class DataprevQuestionImportTests(TestCase):
+    def setUp(self):
+        board, _ = ExamBoard.objects.get_or_create(
+            acronym="FGV",
+            defaults={"name": "Fundação Getulio Vargas"},
+        )
+        self.competition = Competition.objects.create(
+            name="DATAPREV 2026",
+            organization="DATAPREV",
+            role="ATI — Desenvolvimento de Software",
+            board=board,
+            status=Competition.Status.ACTIVE,
+        )
+
+        discipline_names = [
+            "Língua Portuguesa",
+            "Língua Inglesa",
+            "Raciocínio Lógico Matemático",
+            "Atualidades e Inteligência Artificial",
+            "Legislação Acerca de Segurança da Informação e Proteção de Dados",
+            "Desenvolvimento de Sistemas",
+            "Inteligência de Negócios (Business Intelligence)",
+            "Segurança da Informação",
+            "Banco de Dados",
+            "Gestão e Governança de Tecnologia da Informação",
+        ]
+        for position, name in enumerate(discipline_names, start=1):
+            discipline = Discipline.objects.create(name=name)
+            CompetitionDiscipline.objects.create(
+                competition=self.competition,
+                discipline=discipline,
+                knowledge_area=CompetitionDiscipline.KnowledgeArea.SPECIFIC,
+                priority=CompetitionDiscipline.Priority.P1,
+                position=position,
+            )
+
+        systems_link = self.competition.discipline_links.get(
+            discipline__name="Desenvolvimento de Sistemas"
+        )
+        Lesson.objects.create(
+            competition_discipline=systems_link,
+            source_reference="G588",
+            title="6 - JUnit II",
+        )
+
+    def test_full_snapshot_imports_all_answered_questions(self):
+        output = StringIO()
+        call_command(
+            "import_dataprev_2026_questions",
+            competition="DATAPREV 2026",
+            stdout=output,
+        )
+
+        queryset = QuestionRecord.objects.all()
+        self.assertEqual(queryset.count(), 1618)
+        self.assertEqual(
+            queryset.filter(result=QuestionRecord.Result.CORRECT).count(),
+            1191,
+        )
+        self.assertEqual(
+            queryset.filter(result=QuestionRecord.Result.INCORRECT).count(),
+            396,
+        )
+        self.assertEqual(
+            queryset.filter(result=QuestionRecord.Result.NOT_COUNTED).count(),
+            31,
+        )
+        self.assertEqual(queryset.exclude(question_url="").count(), 1044)
+        self.assertEqual(queryset.filter(url_pending=True).count(), 545)
+        self.assertEqual(queryset.filter(review_required=True).count(), 495)
+
+        linked = queryset.get(
+            source_reference="QUESTOES:R1113",
+        ) if queryset.filter(source_reference="QUESTOES:R1113").exists() else None
+        self.assertIn("Questões no snapshot: 1618", output.getvalue())
+
+    def test_second_import_preserves_existing_records_by_default(self):
+        call_command(
+            "import_dataprev_2026_questions",
+            competition="DATAPREV 2026",
+            discipline="Segurança da Informação",
+            stdout=StringIO(),
+        )
+        record = QuestionRecord.objects.first()
+        record.observation = "Alteração local posterior."
+        record.save(update_fields=["observation"])
+
+        output = StringIO()
+        call_command(
+            "import_dataprev_2026_questions",
+            competition="DATAPREV 2026",
+            discipline="Segurança da Informação",
+            stdout=output,
+        )
+
+        record.refresh_from_db()
+        self.assertEqual(record.observation, "Alteração local posterior.")
+        self.assertIn("4 preservada(s)", output.getvalue())
+
+    def test_question_import_dry_run_does_not_write(self):
+        call_command(
+            "import_dataprev_2026_questions",
+            competition="DATAPREV 2026",
+            discipline="Banco de Dados",
+            dry_run=True,
+            stdout=StringIO(),
+        )
+
+        self.assertFalse(QuestionRecord.objects.exists())
