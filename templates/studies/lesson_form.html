@@ -44,7 +44,9 @@
             <div class="col-12 col-lg-8">{% include "competitions/field.html" with field=form.title %}</div>
             <div class="col-12 col-lg-4">{% include "competitions/field.html" with field=form.macrotheme %}</div>
             <div class="col-12 col-lg-8">
-                {% include "competitions/field.html" with field=form.syllabus_items %}
+                <div class="syllabus-checkbox-panel">
+                    {% include "competitions/field.html" with field=form.syllabus_items %}
+                </div>
                 <p class="form-text mb-0">Aqui aparecem somente os itens de {{ discipline_link.discipline.name }}. Você pode marcar vários normalmente.</p>
             </div>
         </div>
