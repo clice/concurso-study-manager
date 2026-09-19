@@ -32,10 +32,9 @@
             <div class="col-12 col-lg-6">{% include "competitions/field.html" with field=form.name %}</div>
             <div class="col-12 col-lg-6">{% include "competitions/field.html" with field=form.organization %}</div>
             <div class="col-12 col-lg-6">{% include "competitions/field.html" with field=form.role %}</div>
-            <div class="col-12 col-md-6 col-lg-3">{% include "competitions/field.html" with field=form.notice_number %}</div>
             <div class="col-12 col-md-6 col-lg-3">{% include "competitions/field.html" with field=form.board %}</div>
-            <div class="col-12 col-lg-6">{% include "competitions/field.html" with field=form.location %}</div>
-            <div class="col-12 col-lg-6">{% include "competitions/field.html" with field=form.status %}</div>
+            <div class="col-12 col-md-6 col-lg-3">{% include "competitions/field.html" with field=form.status %}</div>
+            <div class="col-12">{% include "competitions/field.html" with field=form.location %}</div>
         </div>
     </section>
 
@@ -48,11 +47,10 @@
             </div>
         </div>
         <div class="row g-3">
-            <div class="col-12 col-md-4">{% include "competitions/field.html" with field=form.initial_salary %}</div>
-            <div class="col-12 col-md-4">{% include "competitions/field.html" with field=form.fee %}</div>
-            <div class="col-12 col-md-4">{% include "competitions/field.html" with field=form.validity %}</div>
-            <div class="col-12 col-md-6">{% include "competitions/field.html" with field=form.registration_start %}</div>
-            <div class="col-12 col-md-6">{% include "competitions/field.html" with field=form.registration_end %}</div>
+            <div class="col-12 col-md-6 col-lg-3">{% include "competitions/field.html" with field=form.initial_salary %}</div>
+            <div class="col-12 col-md-6 col-lg-3">{% include "competitions/field.html" with field=form.fee %}</div>
+            <div class="col-12 col-md-6 col-lg-3">{% include "competitions/field.html" with field=form.registration_start %}</div>
+            <div class="col-12 col-md-6 col-lg-3">{% include "competitions/field.html" with field=form.registration_end %}</div>
             <div class="col-12">{% include "competitions/field.html" with field=form.benefits %}</div>
         </div>
     </section>
@@ -62,7 +60,7 @@
             <span class="section-number">03</span>
             <div>
                 <h2 class="h5 mb-1">Prova e fontes</h2>
-                <p class="small text-body-secondary mb-0">A data principal funciona como referência do card; cada etapa poderá ter sua própria data.</p>
+                <p class="small text-body-secondary mb-0">Data e horário da prova, fonte oficial e observações úteis.</p>
             </div>
         </div>
         <div class="row g-3">
@@ -73,7 +71,7 @@
         </div>
     </section>
 
-    <div class="d-flex justify-content-end gap-2">
+    <div class="form-actions d-flex justify-content-end gap-2">
         <a class="btn btn-outline-secondary" href="{% if competition %}{% url 'competitions:detail' competition.pk %}{% else %}/{% endif %}">Cancelar</a>
         <button class="btn btn-primary px-4" type="submit">Salvar concurso</button>
     </div>
