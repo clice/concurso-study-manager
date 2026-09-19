@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }} | {{ competition.name }}{% endblock %}
+
+{% block content %}
+<div class="page-heading mb-4">
+    <div>
+        <p class="eyebrow mb-1">QUESTÕES</p>
+        <h1 class="h2 mb-1">{{ page_title }}</h1>
+        <p class="text-body-secondary mb-0">{{ competition.name }}</p>
+    </div>
+    <a class="btn btn-outline-secondary" href="{% url 'questions:question_list' competition.pk %}?disciplina={{ discipline_link.pk }}">Voltar</a>
+</div>
+
+<form method="post" class="form-card">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+        <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+    {% endif %}
+
+    <div class="form-section">
+        <div class="section-heading">
+            <span class="section-number">1</span>
+            <div>
+                <h2 class="h5 mb-1">Vínculo</h2>
+                <p class="text-body-secondary small mb-0">O concurso e a disciplina já vêm definidos. Vincule a aula quando a questão fizer parte de uma etapa específica.</p>
+            </div>
+        </div>
+
+        <div class="question-context-grid mb-3">
+            <div class="lesson-context-card">
+                <span>Concurso</span>
+                <strong>{{ competition.name }}</strong>
+            </div>
+            <div class="lesson-context-card">
+                <span>Disciplina</span>
+                <strong>{{ discipline_link.discipline.name }}</strong>
+            </div>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-12 col-lg-7">{% include "competitions/field.html" with field=form.lesson %}</div>
+            <div class="col-12 col-lg-5">{% include "competitions/field.html" with field=form.answered_date %}</div>
+        </div>
+        <p class="form-text mb-0 mt-2">Questões externas podem ficar sem aula; questões internas da degravação/apostila devem ser vinculadas quando a aula for identificável.</p>
+    </div>
+
+    <div class="form-section">
+        <div class="section-heading">
+            <span class="section-number">2</span>
+            <div>
+                <h2 class="h5 mb-1">Identificação da questão</h2>
+                <p class="text-body-secondary small mb-0">Metadados da banca, prova e conteúdo.</p>
+            </div>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-12 col-md-3">{% include "competitions/field.html" with field=form.board %}</div>
+            <div class="col-12 col-md-6">{% include "competitions/field.html" with field=form.exam_context %}</div>
+            <div class="col-12 col-md-3">{% include "competitions/field.html" with field=form.question_number %}</div>
+            <div class="col-12">{% include "competitions/field.html" with field=form.topic_subtopic %}</div>
+            <div class="col-12">{% include "competitions/field.html" with field=form.source %}</div>
+        </div>
+    </div>
+
+    <div class="form-section">
+        <div class="section-heading">
+            <span class="section-number">3</span>
+            <div>
+                <h2 class="h5 mb-1">Resposta e correção</h2>
+                <p class="text-body-secondary small mb-0">Registre a resposta efetivamente dada e o resultado da correção.</p>
+            </div>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-12 col-md-4">{% include "competitions/field.html" with field=form.user_answer %}</div>
+            <div class="col-12 col-md-4">{% include "competitions/field.html" with field=form.answer_key %}</div>
+            <div class="col-12 col-md-4">{% include "competitions/field.html" with field=form.result %}</div>
+            <div class="col-12">{% include "competitions/field.html" with field=form.observation %}</div>
+        </div>
+    </div>
+
+    <div class="form-section">
+        <div class="section-heading">
+            <span class="section-number">4</span>
+            <div>
+                <h2 class="h5 mb-1">Revisão</h2>
+                <p class="text-body-secondary small mb-0">Controle somente quando houver necessidade real de revisar.</p>
+            </div>
+        </div>
+
+        <div class="row g-3 align-items-end">
+            <div class="col-12 col-md-2">
+                <div class="form-check mt-4">
+                    {{ form.review_required }}
+                    <label class="form-check-label" for="{{ form.review_required.id_for_label }}">{{ form.review_required.label }}</label>
+                </div>
+                {{ form.review_required.errors }}
+            </div>
+            <div class="col-12 col-md-3">{% include "competitions/field.html" with field=form.last_review %}</div>
+            <div class="col-12 col-md-3">{% include "competitions/field.html" with field=form.next_review %}</div>
+            <div class="col-12 col-md-4">{% include "competitions/field.html" with field=form.review_status %}</div>
+        </div>
+    </div>
+
+    <div class="form-section">
+        <div class="section-heading">
+            <span class="section-number">5</span>
+            <div>
+                <h2 class="h5 mb-1">Link da questão</h2>
+                <p class="text-body-secondary small mb-0">Preserve a URL individual do Gran quando ela estiver disponível.</p>
+            </div>
+        </div>
+
+        <div class="row g-3 align-items-end">
+            <div class="col-12 col-lg-9">{% include "competitions/field.html" with field=form.question_url %}</div>
+            <div class="col-12 col-lg-3">
+                <div class="form-check mb-2">
+                    {{ form.url_pending }}
+                    <label class="form-check-label" for="{{ form.url_pending.id_for_label }}">{{ form.url_pending.label }}</label>
+                </div>
+                {{ form.url_pending.errors }}
+            </div>
+        </div>
+    </div>
+
+    <div class="form-actions d-flex justify-content-end gap-2">
+        <a class="btn btn-outline-secondary" href="{% url 'questions:question_list' competition.pk %}?disciplina={{ discipline_link.pk }}">Cancelar</a>
+        <button class="btn btn-primary" type="submit">{{ submit_label }}</button>
+    </div>
+</form>
+{% endblock %}
