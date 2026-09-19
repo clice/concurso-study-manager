@@ -52,10 +52,9 @@ class SyllabusItemAdmin(admin.ModelAdmin):
         "competition_discipline",
         "position",
         "item_code",
-        "priority",
         "parent",
     )
-    list_filter = ("priority", "competition_discipline__competition")
+    list_filter = ("competition_discipline__competition",)
     search_fields = (
         "item_code",
         "content",
