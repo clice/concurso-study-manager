@@ -53,7 +53,7 @@ class BRLCurrencyField(forms.CharField):
 
         normalized = (
             value.replace("R$", "")
-            .replace(" ", "")
+            .replace("\u00a0", "")
             .replace(" ", "")
             .replace(".", "")
             .replace(",", ".")
@@ -112,10 +112,11 @@ class CompetitionStageForm(forms.ModelForm):
             "stage_type",
             "scheduled_date",
             "scheduled_time",
-            "eliminatory",
-            "classificatory",
             "max_score",
             "minimum_score",
+            "eliminatory",
+            "classificatory",
+            "requires_nonzero_each_discipline",
             "details",
         ]
         widgets = {
@@ -125,12 +126,17 @@ class CompetitionStageForm(forms.ModelForm):
         }
         labels = {
             "stage_type": "Etapa",
+            "requires_nonzero_each_discipline": "Não pode zerar nenhuma disciplina",
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for name, field in self.fields.items():
-            if name in {"eliminatory", "classificatory"}:
+            if name in {
+                "eliminatory",
+                "classificatory",
+                "requires_nonzero_each_discipline",
+            }:
                 field.widget.attrs["class"] = "form-check-input"
             elif name == "stage_type":
                 field.widget.attrs["class"] = "form-select"
@@ -152,16 +158,27 @@ class CompetitionDisciplineForm(forms.ModelForm):
             "knowledge_area",
             "priority",
             "expected_questions",
+            "question_count_kind",
             "weight",
             "max_score",
             "minimum_score",
         ]
+        labels = {
+            "question_count_kind": "Número de questões",
+        }
+        help_texts = {
+            "question_count_kind": "Marque como estimativa quando a distribuição não vier oficialmente no edital.",
+        }
 
     def __init__(self, *args, competition=None, **kwargs):
         self.competition = competition
         super().__init__(*args, **kwargs)
+
+        if self.instance and self.instance.pk and self.instance.discipline_id:
+            self.fields["discipline_name"].initial = self.instance.discipline.name
+
         for name, field in self.fields.items():
-            if name in {"knowledge_area", "priority"}:
+            if name in {"knowledge_area", "priority", "question_count_kind"}:
                 field.widget.attrs["class"] = "form-select"
             else:
                 field.widget.attrs.setdefault("class", "form-control")
