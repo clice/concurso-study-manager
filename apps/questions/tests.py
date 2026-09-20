@@ -167,6 +167,20 @@ class QuestionRecordTests(TestCase):
         self.assertFalse(form.is_valid())
         self.assertIn("question_url", form.errors)
 
+    def test_question_url_rejects_material_or_degravacao_link(self):
+        form = QuestionRecordForm(
+            data=self.payload(
+                question_url=(
+                    "https://drive.google.com/file/d/"
+                    "1ID5f9iic6_xzz-ls7TuE7BRposk2dhX-/view"
+                )
+            ),
+            discipline_link=self.systems_link,
+        )
+
+        self.assertFalse(form.is_valid())
+        self.assertIn("question_url", form.errors)
+
     def test_question_list_is_compact_and_links_to_detail(self):
         question = QuestionRecord.objects.create(
             competition_discipline=self.systems_link,
@@ -456,8 +470,8 @@ class DataprevQuestionImportTests(TestCase):
             queryset.filter(result=QuestionRecord.Result.NOT_COUNTED).count(),
             31,
         )
-        self.assertEqual(queryset.exclude(question_url="").count(), 1044)
-        self.assertEqual(queryset.filter(url_pending=True).count(), 545)
+        self.assertEqual(queryset.exclude(question_url="").count(), 882)
+        self.assertEqual(queryset.filter(url_pending=True).count(), 707)
         self.assertEqual(queryset.filter(review_required=True).count(), 495)
         self.assertEqual(queryset.exclude(code="").count(), 1618)
 
@@ -465,6 +479,19 @@ class DataprevQuestionImportTests(TestCase):
             source_reference="QUESTOES:R1113",
         ) if queryset.filter(source_reference="QUESTOES:R1113").exists() else None
         self.assertIn("Questões no snapshot: 1618", output.getvalue())
+
+    def test_full_snapshot_discards_non_question_urls(self):
+        call_command(
+            "import_dataprev_2026_questions",
+            competition="DATAPREV 2026",
+            stdout=StringIO(),
+        )
+
+        drive_record = QuestionRecord.objects.get(
+            source_reference="QUESTOES:R2995"
+        )
+        self.assertEqual(drive_record.question_url, "")
+        self.assertTrue(drive_record.url_pending)
 
     def test_second_import_preserves_existing_records_by_default(self):
         call_command(
