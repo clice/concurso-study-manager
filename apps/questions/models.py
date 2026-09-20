@@ -1,8 +1,56 @@
+import re
+
 from django.core.exceptions import ValidationError
 from django.db import models
 
 from apps.competitions.models import CompetitionDiscipline
 from apps.studies.models import Lesson
+
+
+QUESTION_URL_PATTERNS = (
+    re.compile(
+        r"^https?://questoes\.grancursosonline\.com\.br/"
+        r"questoes-de-concursos/[^/?#]+/\d+/?(?:[?#].*)?$",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"^https?://questoes\.grancursosonline\.com\.br/"
+        r"prova/[^?#]+/\d+/?(?:[?#].*)?$",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"^https?://(?:www\.)?qconcursos\.com/"
+        r"questoes-de-concursos/questoes/[^/?#]+/?(?:[?#].*)?$",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"^https?://(?:www\.)?questoesestrategicas\.com\.br/"
+        r"questoes/ver/[^/?#]+/?(?:[?#].*)?$",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"^https?://(?:www\.)?soprovas\.com/questoes/\d+/?(?:[?#].*)?$",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"^https?://(?:www\.)?blueconcursos\.com/"
+        r"questoes/.+/q-\d+/?(?:[?#].*)?$",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"^https?://(?:www\.)?gabarite\.com\.br/"
+        r"questoes-de-concursos/\d+-questao/?(?:[?#].*)?$",
+        re.IGNORECASE,
+    ),
+)
+
+
+def is_supported_question_url(value):
+    """Retorna True somente para páginas individuais de questões conhecidas."""
+    url = (value or "").strip()
+    if not url:
+        return False
+    return any(pattern.match(url) for pattern in QUESTION_URL_PATTERNS)
 
 
 class QuestionRecord(models.Model):
@@ -134,6 +182,17 @@ class QuestionRecord(models.Model):
                 {
                     "question_url": (
                         "Informe a URL ou marque que ela está pendente, não os dois."
+                    )
+                }
+            )
+
+        if self.question_url and not is_supported_question_url(self.question_url):
+            raise ValidationError(
+                {
+                    "question_url": (
+                        "Use somente o link de uma questão individual. "
+                        "Links de degravação, Drive, PDF, prova completa, legislação "
+                        "ou listagem de questões devem ficar como URL pendente."
                     )
                 }
             )
