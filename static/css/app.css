@@ -1437,3 +1437,106 @@ details > summary::-webkit-details-marker {
         grid-column: auto;
     }
 }
+
+
+/* Distribuição explícita das colunas da lista de questões.
+   Evita que o navegador entregue espaço livre demais ao código da questão. */
+.question-table-compact {
+    table-layout: fixed;
+    width: 100%;
+}
+
+.question-table-compact .question-col-date {
+    width: 9%;
+}
+
+.question-table-compact .question-col-code {
+    width: 8%;
+}
+
+.question-table-compact .question-col-discipline {
+    width: 38%;
+}
+
+.question-table-compact .question-col-board {
+    width: 12%;
+}
+
+.question-table-compact .question-col-lesson {
+    width: 8%;
+}
+
+.question-table-compact .question-col-result {
+    width: 9%;
+}
+
+.question-table-compact .question-col-review {
+    width: 8%;
+}
+
+.question-table-compact .question-col-link {
+    width: 8%;
+}
+
+.question-table-global .question-col-date {
+    width: 8%;
+}
+
+.question-table-global .question-col-code {
+    width: 7%;
+}
+
+.question-table-global .question-col-competition {
+    width: 11%;
+}
+
+.question-table-global .question-col-discipline {
+    width: 30%;
+}
+
+.question-table-global .question-col-board {
+    width: 10%;
+}
+
+.question-table-global .question-col-lesson {
+    width: 8%;
+}
+
+.question-table-global .question-col-result {
+    width: 9%;
+}
+
+.question-table-global .question-col-review {
+    width: 9%;
+}
+
+.question-table-global .question-col-link {
+    width: 8%;
+}
+
+.question-table-global td:nth-child(3) a {
+    white-space: nowrap;
+}
+
+.question-table-compact th,
+.question-table-compact td {
+    overflow-wrap: anywhere;
+}
+
+.question-table-compact td:nth-child(1),
+.question-table-compact td:nth-child(2),
+.question-table-compact td:nth-child(4),
+.question-table-compact td:nth-child(5),
+.question-table-compact td:nth-child(6),
+.question-table-compact td:nth-child(7),
+.question-table-compact td:nth-child(8),
+.question-table-global td:nth-child(9) {
+    white-space: nowrap;
+}
+
+@media (max-width: 1100px) {
+    .question-table-compact {
+        table-layout: auto;
+        min-width: 980px;
+    }
+}
