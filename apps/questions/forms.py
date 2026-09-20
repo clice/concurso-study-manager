@@ -53,6 +53,10 @@ class QuestionRecordForm(forms.ModelForm):
             "url_pending": "URL pendente de identificação",
         }
         help_texts = {
+            "question_url": (
+                "Informe somente a URL individual da questão no Gran Questões. "
+                "Se ainda não houver link do Gran, deixe em branco e marque como pendente."
+            ),
             "source": (
                 "Onde a questão foi usada ou localizada no estudo. "
                 "Ex.: Slides G588 — 6 - JUnit II, Degravação 47 — Conjunções "
