@@ -167,6 +167,20 @@ class QuestionRecordTests(TestCase):
         self.assertFalse(form.is_valid())
         self.assertIn("question_url", form.errors)
 
+    def test_question_url_rejects_non_gran_link(self):
+        form = QuestionRecordForm(
+            data=self.payload(
+                question_url=(
+                    "https://www.qconcursos.com/questoes-de-concursos/"
+                    "questoes/9854258f-ac"
+                )
+            ),
+            discipline_link=self.systems_link,
+        )
+
+        self.assertFalse(form.is_valid())
+        self.assertIn("question_url", form.errors)
+
     def test_question_url_rejects_material_or_degravacao_link(self):
         form = QuestionRecordForm(
             data=self.payload(
@@ -470,8 +484,8 @@ class DataprevQuestionImportTests(TestCase):
             queryset.filter(result=QuestionRecord.Result.NOT_COUNTED).count(),
             31,
         )
-        self.assertEqual(queryset.exclude(question_url="").count(), 882)
-        self.assertEqual(queryset.filter(url_pending=True).count(), 707)
+        self.assertEqual(queryset.exclude(question_url="").count(), 619)
+        self.assertEqual(queryset.filter(url_pending=True).count(), 999)
         self.assertEqual(queryset.filter(review_required=True).count(), 495)
         self.assertEqual(queryset.exclude(code="").count(), 1618)
 
