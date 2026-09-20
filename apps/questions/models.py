@@ -18,35 +18,11 @@ QUESTION_URL_PATTERNS = (
         r"prova/[^?#]+/\d+/?(?:[?#].*)?$",
         re.IGNORECASE,
     ),
-    re.compile(
-        r"^https?://(?:www\.)?qconcursos\.com/"
-        r"questoes-de-concursos/questoes/[^/?#]+/?(?:[?#].*)?$",
-        re.IGNORECASE,
-    ),
-    re.compile(
-        r"^https?://(?:www\.)?questoesestrategicas\.com\.br/"
-        r"questoes/ver/[^/?#]+/?(?:[?#].*)?$",
-        re.IGNORECASE,
-    ),
-    re.compile(
-        r"^https?://(?:www\.)?soprovas\.com/questoes/\d+/?(?:[?#].*)?$",
-        re.IGNORECASE,
-    ),
-    re.compile(
-        r"^https?://(?:www\.)?blueconcursos\.com/"
-        r"questoes/.+/q-\d+/?(?:[?#].*)?$",
-        re.IGNORECASE,
-    ),
-    re.compile(
-        r"^https?://(?:www\.)?gabarite\.com\.br/"
-        r"questoes-de-concursos/\d+-questao/?(?:[?#].*)?$",
-        re.IGNORECASE,
-    ),
 )
 
 
 def is_supported_question_url(value):
-    """Retorna True somente para páginas individuais de questões conhecidas."""
+    """Retorna True somente para páginas individuais do Gran Questões."""
     url = (value or "").strip()
     if not url:
         return False
@@ -190,9 +166,9 @@ class QuestionRecord(models.Model):
             raise ValidationError(
                 {
                     "question_url": (
-                        "Use somente o link de uma questão individual. "
-                        "Links de degravação, Drive, PDF, prova completa, legislação "
-                        "ou listagem de questões devem ficar como URL pendente."
+                        "Use somente o link individual da questão no Gran Questões. "
+                        "Links de outros bancos, degravação, Drive, PDF, prova completa, "
+                        "legislação ou listagem devem ficar como URL Gran pendente."
                     )
                 }
             )
