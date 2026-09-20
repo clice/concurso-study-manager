@@ -116,45 +116,45 @@
                 </colgroup>
                 <thead>
                     <tr>
-                        <th>Data</th>
-                        <th>Questão</th>
-                        <th>Concurso</th>
-                        <th>Disciplina / tema</th>
-                        <th>Banca</th>
-                        <th>Aula</th>
-                        <th>Resultado</th>
-                        <th>Revisão</th>
-                        <th>Link</th>
+                        <th class="question-cell-date">Data</th>
+                        <th class="question-cell-code">Questão</th>
+                        <th class="question-cell-competition">Concurso</th>
+                        <th class="question-cell-discipline">Disciplina / tema</th>
+                        <th class="question-cell-board">Banca</th>
+                        <th class="question-cell-lesson">Aula</th>
+                        <th class="question-cell-result">Resultado</th>
+                        <th class="question-cell-review">Revisão</th>
+                        <th class="question-cell-link">Link</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for item in questions %}
                         <tr>
-                            <td>{{ item.answered_date|date:"d/m/Y" }}</td>
-                            <td>
+                            <td class="question-cell-date">{{ item.answered_date|date:"d/m/Y" }}</td>
+                            <td class="question-cell-code">
                                 <a class="question-code-link" href="{% url 'questions:question_detail' item.competition.pk item.pk %}">
                                     {{ item.code }}
                                 </a>
                             </td>
-                            <td>
+                            <td class="question-cell-competition">
                                 <a class="table-link" href="{% url 'questions:question_list' item.competition.pk %}">
                                     {{ item.competition.name }}
                                 </a>
                             </td>
-                            <td class="question-discipline-topic-cell">
+                            <td class="question-cell-discipline question-discipline-topic-cell">
                                 <strong class="question-discipline-link">{{ item.competition_discipline.discipline.name }}</strong>
                                 <span class="question-secondary question-topic-preview">{{ item.topic_subtopic|default:"Sem tema/subtema registrado" }}</span>
                             </td>
-                            <td>{% if item.board %}<strong>{{ item.board }}</strong>{% else %}—{% endif %}</td>
-                            <td>
+                            <td class="question-cell-board">{% if item.board %}<strong>{{ item.board }}</strong>{% else %}—{% endif %}</td>
+                            <td class="question-cell-lesson">
                                 {% if item.lesson %}
                                     <a class="question-lesson-link" href="{% url 'studies:lesson_list' item.competition.pk %}?disciplina={{ item.competition_discipline.pk }}&q={{ item.lesson.code }}">
                                         {{ item.lesson.code }}
                                     </a>
                                 {% else %}—{% endif %}
                             </td>
-                            <td><span class="question-result question-result-{{ item.result }}">{{ item.get_result_display }}</span></td>
-                            <td>
+                            <td class="question-cell-result"><span class="question-result question-result-{{ item.result }}">{{ item.get_result_display }}</span></td>
+                            <td class="question-cell-review">
                                 {% if item.review_required %}
                                     {% if item.review_status == "completed" %}
                                         <span class="question-review question-review-completed">Concluída</span>
@@ -163,7 +163,7 @@
                                     {% endif %}
                                 {% else %}—{% endif %}
                             </td>
-                            <td>
+                            <td class="question-cell-link">
                                 {% if item.question_url %}
                                     <a class="question-url-link" href="{{ item.question_url }}" target="_blank" rel="noopener noreferrer">{% if item.is_gran_url %}Gran ↗{% else %}Abrir ↗{% endif %}</a>
                                 {% elif item.url_pending %}
