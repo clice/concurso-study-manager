@@ -196,9 +196,7 @@ class Command(BaseCommand):
                 if is_supported_question_url(raw_question_url)
                 else ""
             )
-            url_pending = bool(row.get("url_pending")) or bool(
-                raw_question_url and not question_url
-            )
+            url_pending = not bool(question_url)
 
             if question_url:
                 planned["urls"] += 1
@@ -233,9 +231,9 @@ class Command(BaseCommand):
             f"referência incompatível/não encontrada: {planned['lesson_mismatch']}"
         )
         self.stdout.write(
-            f"URLs individuais identificadas: {planned['urls']} | "
+            f"URLs individuais do Gran identificadas: {planned['urls']} | "
             f"URLs pendentes de identificação: {planned['url_pending']} | "
-            f"URLs descartadas por não apontarem para questão individual: "
+            f"URLs descartadas por não serem links individuais do Gran: "
             f"{planned['invalid_urls']}"
         )
 
