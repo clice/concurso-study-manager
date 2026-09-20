@@ -5,7 +5,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 from apps.competitions.models import Competition, normalize_discipline_name
-from apps.questions.models import QuestionRecord
+from apps.questions.models import QuestionRecord, is_supported_question_url
 from apps.studies.models import Lesson
 
 
@@ -141,6 +141,7 @@ class Command(BaseCommand):
             "lesson_mismatch": 0,
             "urls": 0,
             "url_pending": 0,
+            "invalid_urls": 0,
         }
         operations = []
 
@@ -189,10 +190,22 @@ class Command(BaseCommand):
             else:
                 planned["lesson_unlinked"] += 1
 
-            if row.get("question_url"):
+            raw_question_url = (row.get("question_url") or "").strip()
+            question_url = (
+                raw_question_url
+                if is_supported_question_url(raw_question_url)
+                else ""
+            )
+            url_pending = bool(row.get("url_pending")) or bool(
+                raw_question_url and not question_url
+            )
+
+            if question_url:
                 planned["urls"] += 1
-            elif row.get("url_pending"):
+            elif url_pending:
                 planned["url_pending"] += 1
+            if raw_question_url and not question_url:
+                planned["invalid_urls"] += 1
 
             planned[action] += 1
             operations.append(
@@ -202,6 +215,8 @@ class Command(BaseCommand):
                     "lesson": lesson,
                     "existing": existing,
                     "action": action,
+                    "question_url": question_url,
+                    "url_pending": url_pending,
                 }
             )
 
@@ -218,8 +233,10 @@ class Command(BaseCommand):
             f"referência incompatível/não encontrada: {planned['lesson_mismatch']}"
         )
         self.stdout.write(
-            f"URLs identificadas: {planned['urls']} | "
-            f"URLs pendentes de identificação: {planned['url_pending']}"
+            f"URLs individuais identificadas: {planned['urls']} | "
+            f"URLs pendentes de identificação: {planned['url_pending']} | "
+            f"URLs descartadas por não apontarem para questão individual: "
+            f"{planned['invalid_urls']}"
         )
 
         if dry_run:
@@ -255,8 +272,8 @@ class Command(BaseCommand):
                 record.last_review = row.get("last_review")
                 record.next_review = row.get("next_review")
                 record.review_status = row.get("review_status")
-                record.question_url = row.get("question_url", "")
-                record.url_pending = row.get("url_pending", False)
+                record.question_url = operation["question_url"]
+                record.url_pending = operation["url_pending"]
                 record.full_clean()
                 record.save()
 
