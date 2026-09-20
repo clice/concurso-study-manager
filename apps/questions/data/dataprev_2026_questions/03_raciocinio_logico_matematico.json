@@ -1007,8 +1007,8 @@
     "last_review": null,
     "next_review": "2026-08-19",
     "review_status": null,
-    "question_url": "https://www.qconcursos.com/questoes-de-concursos/questoes/43f62475-1d",
-    "url_pending": false,
+    "question_url": "",
+    "url_pending": true,
     "lesson_source_reference": "G190"
   },
   {
@@ -1403,8 +1403,8 @@
     "last_review": null,
     "next_review": "2026-08-19",
     "review_status": null,
-    "question_url": "https://www.qconcursos.com/questoes-de-concursos/questoes/d4b6f4c3-74",
-    "url_pending": false,
+    "question_url": "",
+    "url_pending": true,
     "lesson_source_reference": "G198"
   },
   {
@@ -2965,8 +2965,8 @@
     "last_review": null,
     "next_review": null,
     "review_status": null,
-    "question_url": "https://www.qconcursos.com/questoes-de-concursos/questoes/eff9495a-38",
-    "url_pending": false,
+    "question_url": "",
+    "url_pending": true,
     "lesson_source_reference": "G179"
   },
   {
