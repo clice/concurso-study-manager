@@ -35,7 +35,14 @@
     <form method="get" class="question-filters mb-4">
         <div>
             <label class="form-label small" for="filter-discipline">Disciplina</label>
-            <select class="form-select" id="filter-discipline" name="disciplina">
+            <select
+                class="form-select"
+                id="filter-discipline"
+                name="disciplina"
+                data-question-discipline-filter
+                data-lesson-target="filter-lesson"
+                data-lessons-url="{% url 'questions:question_lessons' competition.pk %}"
+            >
                 <option value="">Todas</option>
                 {% for link in discipline_links %}
                     <option value="{{ link.pk }}" {% if filters.discipline == link.pk|stringformat:"s" %}selected{% endif %}>{{ link.discipline.name }}</option>
