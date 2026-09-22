@@ -3,19 +3,12 @@
 {% block title %}Aulas | {{ competition.name }}{% endblock %}
 
 {% block content %}
-<div class="page-heading mb-3">
-    <div>
-        <p class="eyebrow mb-1">ESTUDO</p>
-        <h1 class="h2 mb-1">Aulas</h1>
-        <p class="text-body-secondary mb-0">{{ competition.name }}</p>
-    </div>
-    {% if selected_discipline_link %}
-        <a class="btn btn-primary" href="{% url 'studies:lesson_create' competition.pk selected_discipline_link.pk %}">Adicionar aula</a>
-    {% else %}
-        <a class="btn btn-primary" href="{% url 'studies:lesson_choose_discipline' competition.pk %}">Adicionar aula</a>
-    {% endif %}
-</div>
-
+{% if selected_discipline_link %}
+    {% url 'studies:lesson_create' competition.pk selected_discipline_link.pk as hero_action_url %}
+{% else %}
+    {% url 'studies:lesson_choose_discipline' competition.pk as hero_action_url %}
+{% endif %}
+{% include "competitions/competition_page_hero.html" with hero_title="Aulas" hero_action_url=hero_action_url hero_action_label="Adicionar aula" %}
 {% include "competitions/competition_nav.html" %}
 
 <div class="lesson-metrics mb-4">
