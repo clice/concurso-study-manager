@@ -169,6 +169,7 @@ class QuestionRecord(models.Model):
         return "grancursosonline.com.br" in (self.question_url or "")
 
     def save(self, *args, **kwargs):
+        self.board = normalize_board_name(self.board)
         if not self.code:
             self.code = self.next_code()
         super().save(*args, **kwargs)
