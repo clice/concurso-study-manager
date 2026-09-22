@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}{{ question.code }} | {{ competition.name }}{% endblock %}
+
+{% block content %}
+{% url 'questions:question_edit' competition.pk question.pk as hero_action_url %}
+{% include "competitions/competition_page_hero.html" with hero_title=question.code hero_subtitle=question.competition_discipline.discipline.name hero_status=question.get_result_display hero_status_class=question.result hero_action_url=hero_action_url hero_action_label="Editar questão" %}
+{% include "competitions/competition_nav.html" %}
+
+<div class="question-detail-grid">
+    <section class="content-card question-detail-main">
+        <div class="question-detail-section">
+            <p class="eyebrow mb-1">IDENTIFICAÇÃO</p>
+            <h2 class="h5 mb-3">Dados da questão</h2>
+
+            <dl class="question-detail-list">
+                <div>
+                    <dt>Data respondida</dt>
+                    <dd>{{ question.answered_date|date:"d/m/Y" }}</dd>
+                </div>
+                <div>
+                    <dt>Banca</dt>
+                    <dd>{{ question.board|default:"—" }}</dd>
+                </div>
+                <div class="question-detail-span-2">
+                    <dt>Órgão / prova / cargo</dt>
+                    <dd>{{ question.exam_context|default:"—" }}</dd>
+                </div>
+                <div class="question-detail-span-2">
+                    <dt>Identificação / enunciado registrado</dt>
+                    <dd>{{ question.question_number|default:"—" }}</dd>
+                </div>
+                <div class="question-detail-span-2">
+                    <dt>Tema / subtema</dt>
+                    <dd>{{ question.topic_subtopic|default:"—" }}</dd>
+                </div>
+                <div class="question-detail-span-2">
+                    <dt>Fonte / origem</dt>
+                    <dd>{{ question.source|default:"—" }}</dd>
+                </div>
+            </dl>
+        </div>
+
+        <div class="question-detail-section">
+            <p class="eyebrow mb-1">CORREÇÃO</p>
+            <h2 class="h5 mb-3">Resposta e análise</h2>
+
+            <dl class="question-detail-list">
+                <div>
+                    <dt>Sua resposta</dt>
+                    <dd>{{ question.user_answer|default:"—" }}</dd>
+                </div>
+                <div>
+                    <dt>Gabarito</dt>
+                    <dd>{{ question.answer_key|default:"—" }}</dd>
+                </div>
+                <div>
+                    <dt>Resultado</dt>
+                    <dd><span class="question-result question-result-{{ question.result }}">{{ question.get_result_display }}</span></dd>
+                </div>
+                <div class="question-detail-span-2">
+                    <dt>Observação</dt>
+                    <dd class="question-detail-long-text">{{ question.observation|default:"—"|linebreaksbr }}</dd>
+                </div>
+            </dl>
+        </div>
+
+        <div class="question-detail-section">
+            <p class="eyebrow mb-1">REVISÃO</p>
+            <h2 class="h5 mb-3">Acompanhamento</h2>
+
+            {% if question.review_required %}
+                <dl class="question-detail-list">
+                    <div>
+                        <dt>Status</dt>
+                        <dd>
+                            {% if question.review_status == "completed" %}
+                                <span class="question-review question-review-completed">Concluída</span>
+                            {% else %}
+                                <span class="question-review question-review-pending">Pendente</span>
+                            {% endif %}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt>Última revisão</dt>
+                        <dd>{{ question.last_review|date:"d/m/Y"|default:"—" }}</dd>
+                    </div>
+                    <div>
+                        <dt>Próxima revisão</dt>
+                        <dd>{{ question.next_review|date:"d/m/Y"|default:"—" }}</dd>
+                    </div>
+                </dl>
+            {% else %}
+                <p class="text-body-secondary mb-0">Esta questão não está marcada para revisão.</p>
+            {% endif %}
+        </div>
+    </section>
+
+    <aside class="question-detail-sidebar">
+        <section class="content-card">
+            <p class="eyebrow mb-1">AULA</p>
+            <h2 class="h5 mb-3">Vínculo de estudo</h2>
+
+            {% if question.lesson %}
+                <a class="question-detail-lesson" href="{% url 'studies:lesson_list' competition.pk %}?disciplina={{ question.competition_discipline.pk }}&q={{ question.lesson.code }}">
+                    <strong>{{ question.lesson.code }}</strong>
+                    <span>{{ question.lesson.title }}</span>
+                </a>
+
+                <div class="question-detail-materials mt-3">
+                    {% if question.lesson.video_url %}
+                        <a href="{{ question.lesson.video_url }}" target="_blank" rel="noopener noreferrer">Videoaula ↗</a>
+                    {% endif %}
+                    {% if question.lesson.transcript_url %}
+                        <a href="{{ question.lesson.transcript_url }}" target="_blank" rel="noopener noreferrer">Degravação ↗</a>
+                    {% endif %}
+                    {% if question.lesson.handout_url %}
+                        <a href="{{ question.lesson.handout_url }}" target="_blank" rel="noopener noreferrer">Apostila ↗</a>
+                    {% endif %}
+                </div>
+            {% else %}
+                <p class="text-body-secondary mb-0">Sem aula vinculada.</p>
+            {% endif %}
+        </section>
+
+        <section class="content-card mt-3">
+            <p class="eyebrow mb-1">LINK</p>
+            <h2 class="h5 mb-3">Questão original</h2>
+
+            {% if question.question_url %}
+                <a class="btn btn-outline-primary w-100" href="{{ question.question_url }}" target="_blank" rel="noopener noreferrer">
+                    {% if question.is_gran_url %}Abrir no Gran ↗{% else %}Abrir questão ↗{% endif %}
+                </a>
+            {% elif question.url_pending %}
+                <span class="question-url-pending">URL pendente de identificação</span>
+            {% else %}
+                <p class="text-body-secondary mb-0">Nenhuma URL registrada.</p>
+            {% endif %}
+        </section>
+    </aside>
+</div>
+{% endblock %}

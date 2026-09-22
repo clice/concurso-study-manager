@@ -1,0 +1,8 @@
+<nav class="competition-nav mb-4" aria-label="Navegação geral de questões">
+    <a class="competition-nav-link {% if active_global_question_tab == 'list' %}active{% endif %}" href="{% url 'questions_global:list' %}">
+        Todas as questões
+    </a>
+    <a class="competition-nav-link {% if active_global_question_tab == 'dashboard' %}active{% endif %}" href="{% url 'questions_global:dashboard' %}">
+        Dashboard
+    </a>
+</nav>

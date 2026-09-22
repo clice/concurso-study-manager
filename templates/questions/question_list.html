@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+
+{% block title %}Questões | {{ competition.name }}{% endblock %}
+
+{% block content %}
+{% if selected_discipline_link %}
+    {% url 'questions:question_create' competition.pk selected_discipline_link.pk as hero_action_url %}
+{% else %}
+    {% url 'questions:question_choose_discipline' competition.pk as hero_action_url %}
+{% endif %}
+{% include "competitions/competition_page_hero.html" with hero_title="Questões" hero_action_url=hero_action_url hero_action_label="Adicionar questão" %}
+{% include "competitions/competition_nav.html" %}
+
+<div class="dashboard-kpis question-metrics mb-4">
+    <div class="dashboard-kpi dashboard-kpi-primary">
+        <div class="dashboard-kpi-label"><span>Questões exibidas</span><span class="dashboard-kpi-tag">VOLUME</span></div>
+        <strong>{{ filtered_total }}</strong>
+        <small>Registros considerados pelos filtros atuais</small>
+    </div>
+    <div class="dashboard-kpi">
+        <div class="dashboard-kpi-label"><span>Acertos</span><span class="dashboard-kpi-tag">RESULTADO</span></div>
+        <strong>{{ correct_count }}</strong>
+        <small>Questões contabilizadas como acerto</small>
+    </div>
+    <div class="dashboard-kpi">
+        <div class="dashboard-kpi-label"><span>Erros</span><span class="dashboard-kpi-tag">RESULTADO</span></div>
+        <strong>{{ incorrect_count }}</strong>
+        <small>Questões contabilizadas como erro</small>
+    </div>
+    <div class="dashboard-kpi">
+        <div class="dashboard-kpi-label"><span>Taxa de acerto</span><span class="dashboard-kpi-tag">DESEMPENHO</span></div>
+        <strong>{% if accuracy is not None %}{{ accuracy|floatformat:"-1" }}%{% else %}—{% endif %}</strong>
+        <small>Desconsidera questões não contabilizadas</small>
+    </div>
+    <div class="dashboard-kpi">
+        <div class="dashboard-kpi-label"><span>Revisões pendentes</span><span class="dashboard-kpi-tag">REVISÃO</span></div>
+        <strong>{{ pending_reviews }}</strong>
+        <small>Questões ainda marcadas para retorno</small>
+    </div>
+</div>
+
+<section class="content-card">
+    <div class="content-card-header mb-3">
+        <div>
+            <p class="eyebrow mb-1">REGISTRO</p>
+            <h2 class="h4 mb-1">Questões respondidas</h2>
+            <p class="text-body-secondary small mb-0">Lista compacta. Clique no código da questão para ver todos os detalhes.</p>
+        </div>
+        <div class="question-list-meta">
+            <strong>{{ page_size }}</strong>
+            <span>por página</span>
+        </div>
+    </div>
+
+    <form method="get" class="question-filters mb-4">
+        <div>
+            <label class="form-label small" for="filter-discipline">Disciplina</label>
+            <select
+                class="form-select"
+                id="filter-discipline"
+                name="disciplina"
+                data-question-discipline-filter
+                data-lesson-target="filter-lesson"
+                data-lessons-url="{% url 'questions:question_lessons' competition.pk %}"
+            >
+                <option value="">Todas</option>
+                {% for link in discipline_links %}
+                    <option value="{{ link.pk }}" {% if filters.discipline == link.pk|stringformat:"s" %}selected{% endif %}>{{ link.discipline.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <label class="form-label small" for="filter-lesson">Aula</label>
+            <select class="form-select" id="filter-lesson" name="aula" {% if not selected_discipline_link %}disabled{% endif %}>
+                <option value="">Todas</option>
+                {% for lesson in lessons %}
+                    <option value="{{ lesson.pk }}" {% if filters.lesson == lesson.pk|stringformat:"s" %}selected{% endif %}>{{ lesson.code }} — {{ lesson.title }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <label class="form-label small" for="filter-result">Resultado</label>
+            <select class="form-select" id="filter-result" name="resultado">
+                <option value="">Todos</option>
+                {% for value, label in result_choices %}
+                    <option value="{{ value }}" {% if filters.result == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <label class="form-label small" for="filter-review">Revisão</label>
+            <select class="form-select" id="filter-review" name="revisao">
+                <option value="">Todas</option>
+                <option value="required" {% if filters.review == "required" %}selected{% endif %}>Marcadas para revisar</option>
+                <option value="pending" {% if filters.review == "pending" %}selected{% endif %}>Pendentes</option>
+                <option value="completed" {% if filters.review == "completed" %}selected{% endif %}>Concluídas</option>
+                <option value="not_required" {% if filters.review == "not_required" %}selected{% endif %}>Sem revisão</option>
+            </select>
+        </div>
+
+        <div>
+            <label class="form-label small" for="filter-board">Banca</label>
+            <select class="form-select" id="filter-board" name="banca">
+                <option value="">Todas</option>
+                {% for item in boards %}
+                    <option value="{{ item }}" {% if filters.board == item %}selected{% endif %}>{{ item }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <label class="form-label small" for="filter-date">Data</label>
+            <input class="form-control" id="filter-date" type="date" name="data" value="{{ filters.date }}">
+        </div>
+
+        <div class="question-filter-search">
+            <label class="form-label small" for="filter-q">Buscar</label>
+            <input class="form-control" id="filter-q" type="search" name="q" value="{{ filters.q }}" placeholder="Código, questão, prova, tema ou fonte">
+        </div>
+
+        <div class="question-filter-actions">
+            <button class="btn btn-primary" type="submit">Filtrar</button>
+            <a class="btn btn-outline-secondary" href="{% url 'questions:question_list' competition.pk %}">Limpar</a>
+        </div>
+    </form>
+
+    {% if questions %}
+        {% include "shared/pagination.html" with item_label_plural="questões" %}
+
+        <div class="table-responsive mt-3">
+            <table class="table align-middle question-table question-table-compact mb-0">
+                <colgroup>
+                    <col class="question-col-date">
+                    <col class="question-col-code">
+                    <col class="question-col-discipline">
+                    <col class="question-col-board">
+                    <col class="question-col-lesson">
+                    <col class="question-col-result">
+                    <col class="question-col-review">
+                    <col class="question-col-link">
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th class="question-cell-date">Data</th>
+                        <th class="question-cell-code">Questão</th>
+                        <th class="question-cell-discipline">Disciplina / tema</th>
+                        <th class="question-cell-board">Banca</th>
+                        <th class="question-cell-lesson">Aula</th>
+                        <th class="question-cell-result">Resultado</th>
+                        <th class="question-cell-review">Revisão</th>
+                        <th class="question-cell-link">Link</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in questions %}
+                        <tr>
+                            <td class="question-cell-date">{{ item.answered_date|date:"d/m/Y" }}</td>
+                            <td class="question-cell-code">
+                                <a class="question-code-link" href="{% url 'questions:question_detail' competition.pk item.pk %}">
+                                    {{ item.code }}
+                                </a>
+                            </td>
+                            <td class="question-cell-discipline question-discipline-topic-cell">
+                                <a class="table-link question-discipline-link" href="{% url 'competitions:discipline_detail' competition.pk item.competition_discipline.pk %}">
+                                    {{ item.competition_discipline.discipline.name }}
+                                </a>
+                                <span class="question-secondary question-topic-preview">{{ item.topic_subtopic|default:"Sem tema/subtema registrado" }}</span>
+                            </td>
+                            <td class="question-cell-board">
+                                {% if item.board %}<strong>{{ item.board }}</strong>{% else %}<span class="text-body-secondary">—</span>{% endif %}
+                            </td>
+                            <td class="question-cell-lesson">
+                                {% if item.lesson %}
+                                    <a class="question-lesson-link" href="{% url 'studies:lesson_list' competition.pk %}?disciplina={{ item.competition_discipline.pk }}&q={{ item.lesson.code }}">
+                                        {{ item.lesson.code }}
+                                    </a>
+                                {% else %}
+                                    <span class="text-body-secondary">—</span>
+                                {% endif %}
+                            </td>
+                            <td class="question-cell-result"><span class="question-result question-result-{{ item.result }}">{{ item.get_result_display }}</span></td>
+                            <td class="question-cell-review">
+                                {% if item.review_required %}
+                                    {% if item.review_status == "completed" %}
+                                        <span class="question-review question-review-completed">Concluída</span>
+                                    {% else %}
+                                        <span class="question-review question-review-pending">Pendente</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-body-secondary">—</span>
+                                {% endif %}
+                            </td>
+                            <td class="question-cell-link">
+                                {% if item.question_url %}
+                                    <a class="question-url-link" href="{{ item.question_url }}" target="_blank" rel="noopener noreferrer">
+                                        {% if item.is_gran_url %}Gran ↗{% else %}Abrir ↗{% endif %}
+                                    </a>
+                                {% elif item.url_pending %}
+                                    <span class="question-url-pending">Pendente</span>
+                                {% else %}
+                                    <span class="text-body-secondary">—</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% include "shared/pagination.html" with item_label_plural="questões" %}
+    {% else %}
+        <div class="soft-empty">Nenhuma questão encontrada com os filtros atuais.</div>
+    {% endif %}
+</section>
+{% endblock %}

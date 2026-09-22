@@ -165,6 +165,97 @@ function enableLessonActionPopovers() {
     window.addEventListener("scroll", closeOpenPopovers, true);
 }
 
+
+
+
+function enableQuestionLessonFilter() {
+    document.querySelectorAll("[data-question-discipline-filter]").forEach((disciplineSelect) => {
+        const lessonSelectId = disciplineSelect.dataset.lessonTarget;
+        const endpoint = disciplineSelect.dataset.lessonsUrl;
+        const lessonSelect = lessonSelectId
+            ? document.getElementById(lessonSelectId)
+            : null;
+
+        if (!lessonSelect || !endpoint) return;
+
+        let requestController = null;
+
+        const resetLessons = (message = "Todas") => {
+            lessonSelect.innerHTML = "";
+            const option = document.createElement("option");
+            option.value = "";
+            option.textContent = message;
+            lessonSelect.appendChild(option);
+        };
+
+        const loadLessons = async () => {
+            const disciplineId = disciplineSelect.value;
+            const previousLesson = lessonSelect.value;
+
+            if (requestController) requestController.abort();
+
+            if (!disciplineId) {
+                resetLessons("Todas");
+                lessonSelect.disabled = true;
+                return;
+            }
+
+            lessonSelect.disabled = true;
+            resetLessons("Carregando aulas…");
+            requestController = new AbortController();
+
+            try {
+                const url = new URL(endpoint, window.location.origin);
+                url.searchParams.set("disciplina", disciplineId);
+                const response = await fetch(url, {
+                    headers: {"Accept": "application/json"},
+                    signal: requestController.signal,
+                });
+                if (!response.ok) throw new Error("Falha ao carregar aulas.");
+
+                const data = await response.json();
+                resetLessons("Todas");
+
+                data.lessons.forEach((lesson) => {
+                    const option = document.createElement("option");
+                    option.value = String(lesson.id);
+                    option.textContent = lesson.label;
+                    if (String(lesson.id) === previousLesson) {
+                        option.selected = true;
+                    }
+                    lessonSelect.appendChild(option);
+                });
+
+                lessonSelect.disabled = false;
+            } catch (error) {
+                if (error.name === "AbortError") return;
+                resetLessons("Não foi possível carregar");
+                lessonSelect.disabled = true;
+            }
+        };
+
+        disciplineSelect.addEventListener("change", loadLessons);
+    });
+}
+
+function enableQuestionBoardOtherField() {
+    const select = document.querySelector("[data-question-board-select]");
+    const wrapper = document.querySelector("[data-question-board-other]");
+    const input = document.querySelector("[data-question-board-other-input]");
+
+    if (!select || !wrapper || !input) return;
+
+    const update = () => {
+        const showOther = select.value === "__other__";
+        wrapper.hidden = !showOther;
+        input.required = showOther;
+        if (!showOther) input.value = "";
+    };
+
+    select.addEventListener("change", update);
+    update();
+}
+
 function enableCollapsibleForms() {
     document.querySelectorAll("[data-collapsible-form]").forEach((details) => {
         updateCollapsibleSummary(details);
@@ -207,4 +298,6 @@ document.addEventListener("DOMContentLoaded", () => {
     enableSortableLists();
     enableCollapsibleForms();
     enableLessonActionPopovers();
+    enableQuestionBoardOtherField();
+    enableQuestionLessonFilter();
 });

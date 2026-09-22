@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Nova questão | Concurso Study Manager{% endblock %}
+
+{% block content %}
+<div class="page-heading mb-3">
+    <div>
+        <p class="eyebrow mb-1">NOVA QUESTÃO</p>
+        <h1 class="h2 mb-1">Escolha o concurso</h1>
+        <p class="text-body-secondary mb-0">Depois você escolherá a disciplina e, se necessário, a aula vinculada.</p>
+    </div>
+    <a class="btn btn-outline-secondary" href="{% url 'questions_global:list' %}">Voltar</a>
+</div>
+
+{% include "questions/global_question_nav.html" %}
+
+<div class="row g-3">
+    {% for competition in competitions %}
+        <div class="col-12 col-lg-6">
+            <a class="competition-link" href="{% url 'questions:question_choose_discipline' competition.pk %}">
+                <article class="competition-card h-100">
+                    <span class="badge text-bg-light border mb-2">{{ competition.get_status_display }}</span>
+                    <h2 class="h5 mb-1">{{ competition.name }}</h2>
+                    <p class="text-body-secondary mb-0">{{ competition.organization }} · {{ competition.role }}</p>
+                </article>
+            </a>
+        </div>
+    {% empty %}
+        <div class="soft-empty">Cadastre um concurso antes de registrar questões.</div>
+    {% endfor %}
+</div>
+{% endblock %}

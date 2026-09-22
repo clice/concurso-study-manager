@@ -1,0 +1,41 @@
+<section class="competition-hero mb-3">
+    <div class="competition-hero-main">
+        <div class="competition-hero-kicker">
+            <span>{{ competition.name }}</span>
+            {% if competition.board %}
+                <span class="competition-hero-dot">•</span>
+                <span>{{ competition.board.acronym }}</span>
+            {% endif %}
+        </div>
+
+        <div class="competition-hero-title-row">
+            <h1>{{ hero_title }}</h1>
+            {% if hero_status %}
+                <span class="question-result question-result-{{ hero_status_class }}">{{ hero_status }}</span>
+            {% endif %}
+        </div>
+
+        <p>
+            {% if hero_subtitle %}
+                {{ hero_subtitle }}
+            {% else %}
+                {{ competition.role }}
+                {% if competition.location %}<span>·</span> {{ competition.location }}{% endif %}
+            {% endif %}
+        </p>
+    </div>
+
+    <div class="competition-hero-side">
+        {% if competition.exam_date %}
+            <span class="competition-hero-side-label">PROVA</span>
+            <strong>{{ competition.exam_date|date:"d/m/Y" }}</strong>
+        {% else %}
+            <span class="competition-hero-side-label">PROVA</span>
+            <strong>Sem data</strong>
+        {% endif %}
+
+        {% if hero_action_url %}
+            <a class="btn btn-sm {{ hero_action_class|default:'btn-primary' }} competition-hero-action" href="{{ hero_action_url }}{% if hero_action_query %}?disciplina={{ hero_action_query }}{% endif %}">{{ hero_action_label }}</a>
+        {% endif %}
+    </div>
+</section>

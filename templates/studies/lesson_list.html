@@ -3,26 +3,35 @@
 {% block title %}Aulas | {{ competition.name }}{% endblock %}
 
 {% block content %}
-<div class="page-heading mb-3">
-    <div>
-        <p class="eyebrow mb-1">ESTUDO</p>
-        <h1 class="h2 mb-1">Aulas</h1>
-        <p class="text-body-secondary mb-0">{{ competition.name }}</p>
-    </div>
-    {% if selected_discipline_link %}
-        <a class="btn btn-primary" href="{% url 'studies:lesson_create' competition.pk selected_discipline_link.pk %}">Adicionar aula</a>
-    {% else %}
-        <a class="btn btn-primary" href="{% url 'studies:lesson_choose_discipline' competition.pk %}">Adicionar aula</a>
-    {% endif %}
-</div>
-
+{% if selected_discipline_link %}
+    {% url 'studies:lesson_create' competition.pk selected_discipline_link.pk as hero_action_url %}
+{% else %}
+    {% url 'studies:lesson_choose_discipline' competition.pk as hero_action_url %}
+{% endif %}
+{% include "competitions/competition_page_hero.html" with hero_title="Aulas" hero_action_url=hero_action_url hero_action_label="Adicionar aula" %}
 {% include "competitions/competition_nav.html" %}
 
-<div class="lesson-metrics mb-4">
-    <div class="summary-item"><span>Aulas exibidas</span><strong>{{ filtered_total }}</strong></div>
-    <div class="summary-item"><span>Concluídas</span><strong>{{ completed_count }}</strong></div>
-    <div class="summary-item"><span>Em andamento</span><strong>{{ in_progress_count }}</strong></div>
-    <div class="summary-item"><span>Não iniciadas</span><strong>{{ not_started_count }}</strong></div>
+<div class="dashboard-kpis lesson-metrics mb-4">
+    <div class="dashboard-kpi dashboard-kpi-primary">
+        <div class="dashboard-kpi-label"><span>Aulas exibidas</span><span class="dashboard-kpi-tag">AULAS</span></div>
+        <strong>{{ filtered_total }}</strong>
+        <small>Registros considerados pelos filtros atuais</small>
+    </div>
+    <div class="dashboard-kpi">
+        <div class="dashboard-kpi-label"><span>Concluídas</span><span class="dashboard-kpi-tag">STATUS</span></div>
+        <strong>{{ completed_count }}</strong>
+        <small>Aulas com estudo concluído</small>
+    </div>
+    <div class="dashboard-kpi">
+        <div class="dashboard-kpi-label"><span>Em andamento</span><span class="dashboard-kpi-tag">STATUS</span></div>
+        <strong>{{ in_progress_count }}</strong>
+        <small>Aulas ainda abertas</small>
+    </div>
+    <div class="dashboard-kpi">
+        <div class="dashboard-kpi-label"><span>Não iniciadas</span><span class="dashboard-kpi-tag">STATUS</span></div>
+        <strong>{{ not_started_count }}</strong>
+        <small>Aulas ainda não começadas</small>
+    </div>
 </div>
 
 <section class="content-card">
@@ -77,7 +86,9 @@
     </form>
 
     {% if lessons %}
-        <div class="table-responsive">
+        {% include "shared/pagination.html" with item_label_plural="aulas" %}
+
+        <div class="table-responsive mt-3">
             <table class="table align-middle lesson-table mb-0">
                 <thead>
                     <tr>
@@ -149,6 +160,7 @@
                                     {% endif %}
 
                                     <div class="lesson-actions-divider"></div>
+                                    <a class="lesson-action-edit" href="{% url 'questions:question_create' competition.pk lesson.competition_discipline.pk %}?aula={{ lesson.pk }}">Adicionar questão</a>
                                     <a class="lesson-action-edit" href="{% url 'studies:lesson_edit' competition.pk lesson.pk %}">Editar aula</a>
                                 </div>
                             </td>
@@ -157,6 +169,8 @@
                 </tbody>
             </table>
         </div>
+
+        {% include "shared/pagination.html" with item_label_plural="aulas" %}
     {% else %}
         <div class="soft-empty">Nenhuma aula encontrada com os filtros atuais.</div>
     {% endif %}

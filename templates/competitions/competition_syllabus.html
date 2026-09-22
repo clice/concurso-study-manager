@@ -3,15 +3,8 @@
 {% block title %}Edital | {{ competition.name }}{% endblock %}
 
 {% block content %}
-<div class="page-heading mb-3">
-    <div>
-        <p class="eyebrow mb-1">CONTEÚDO PROGRAMÁTICO</p>
-        <h1 class="h2 mb-1">Edital verticalizado</h1>
-        <p class="text-body-secondary mb-0">{{ competition.name }}</p>
-    </div>
-    <a class="btn btn-outline-secondary" href="{% url 'competitions:detail' competition.pk %}">Voltar à visão geral</a>
-</div>
-
+{% url 'competitions:detail' competition.pk as hero_action_url %}
+{% include "competitions/competition_page_hero.html" with hero_title="Edital verticalizado" hero_action_url=hero_action_url hero_action_label="Visão geral" hero_action_class="btn-outline-primary" %}
 {% include "competitions/competition_nav.html" %}
 
 <section class="content-card">
