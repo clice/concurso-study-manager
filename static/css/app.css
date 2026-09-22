@@ -2245,10 +2245,6 @@ details > summary::-webkit-details-marker {
     text-transform: uppercase;
 }
 
-.overview-discipline-header span:last-child {
-    display: none;
-}
-
 .overview-discipline-item {
     align-items: flex-start;
 }
