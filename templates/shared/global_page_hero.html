@@ -1,0 +1,12 @@
+<section class="competition-hero global-page-hero mb-3">
+    <div class="competition-hero-main">
+        <div class="competition-hero-kicker">{{ hero_kicker }}</div>
+        <h1>{{ hero_title }}</h1>
+        <p>{{ hero_subtitle }}</p>
+    </div>
+    {% if hero_action_url %}
+        <div class="competition-hero-side global-page-hero-side">
+            <a class="btn btn-primary" href="{{ hero_action_url }}">{{ hero_action_label }}</a>
+        </div>
+    {% endif %}
+</section>
