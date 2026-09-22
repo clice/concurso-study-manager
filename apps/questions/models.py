@@ -7,6 +7,39 @@ from apps.competitions.models import CompetitionDiscipline
 from apps.studies.models import Lesson
 
 
+BOARD_ALIASES = {
+    "CESPE": "CESPE/CEBRASPE",
+    "CEBRASPE": "CESPE/CEBRASPE",
+    "CESPE/CEBRASPE": "CESPE/CEBRASPE",
+    "AVANÇA SP": "AVANÇA-SP",
+    "AVANÇA-SP": "AVANÇA-SP",
+    "AOCP": "AOCP",
+    "INSTITUTO AOCP": "AOCP",
+    "FUNDAÇÃO CETAP": "CETAP",
+    "CETAP": "CETAP",
+    "COMPERVE (UFRN)": "COMPERVE",
+    "COMPERVE": "COMPERVE",
+    "CPCON (UEPB)": "CPCON",
+    "CPCON": "CPCON",
+    "INSTITUTO CONSULPLAN": "CONSULPLAN",
+    "CONSULPLAN": "CONSULPLAN",
+    "OBJETIVA": "OBJETIVA CONCURSOS",
+    "OBJETIVA CONCURSOS": "OBJETIVA CONCURSOS",
+    "VUNESP-SP": "VUNESP",
+    "VUNESP SP": "VUNESP",
+    "VUNESP/SP": "VUNESP",
+    "VUNESP": "VUNESP",
+}
+
+
+def normalize_board_name(value):
+    """Padroniza banca em caixa alta e consolida aliases conhecidos."""
+    board = re.sub(r"\s+", " ", (value or "").strip()).upper()
+    if not board:
+        return ""
+    return BOARD_ALIASES.get(board, board)
+
+
 QUESTION_URL_PATTERNS = (
     re.compile(
         r"^https?://questoes\.grancursosonline\.com\.br/"
@@ -142,6 +175,7 @@ class QuestionRecord(models.Model):
 
     def clean(self):
         super().clean()
+        self.board = normalize_board_name(self.board)
 
         if self.lesson_id:
             if (
