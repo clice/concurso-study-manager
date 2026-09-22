@@ -130,6 +130,8 @@ def question_list(request, pk):
 
     paginator = Paginator(questions, 50)
     page_obj = paginator.get_page(request.GET.get("pagina"))
+    pagination_query = request.GET.copy()
+    pagination_query.pop("pagina", None)
 
     boards = list(
         QuestionRecord.objects.filter(
@@ -170,6 +172,13 @@ def question_list(request, pk):
             "accuracy": accuracy,
             "pending_reviews": pending_reviews,
             "page_size": paginator.per_page,
+            "pagination_query": pagination_query.urlencode(),
+            "pagination_pages": paginator.get_elided_page_range(
+                page_obj.number,
+                on_each_side=2,
+                on_ends=1,
+            ),
+            "pagination_ellipsis": paginator.ELLIPSIS,
         },
     )
 
@@ -413,6 +422,8 @@ def global_question_list(request):
 
     paginator = Paginator(questions, 50)
     page_obj = paginator.get_page(request.GET.get("pagina"))
+    pagination_query = request.GET.copy()
+    pagination_query.pop("pagina", None)
 
     competitions = Competition.objects.order_by("name")
     disciplines = (
@@ -443,6 +454,13 @@ def global_question_list(request):
             "metrics": metrics,
             "active_global_question_tab": "list",
             "page_size": paginator.per_page,
+            "pagination_query": pagination_query.urlencode(),
+            "pagination_pages": paginator.get_elided_page_range(
+                page_obj.number,
+                on_each_side=2,
+                on_ends=1,
+            ),
+            "pagination_ellipsis": paginator.ELLIPSIS,
         },
     )
 
