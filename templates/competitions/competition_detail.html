@@ -4,18 +4,8 @@
 {% block title %}{{ competition.name }} | Concurso Study Manager{% endblock %}
 
 {% block content %}
-<div class="page-heading mb-3">
-    <div>
-        <div class="d-flex align-items-center gap-2 mb-2">
-            <span class="badge text-bg-light border">{{ competition.get_status_display }}</span>
-            {% if competition.board %}<span class="small text-body-secondary">{{ competition.board.acronym }}</span>{% endif %}
-        </div>
-        <h1 class="h2 mb-1">{{ competition.name }}</h1>
-        <p class="text-body-secondary mb-0">{{ competition.organization }} · {{ competition.role }}</p>
-    </div>
-    <a class="btn btn-outline-primary" href="{% url 'competitions:edit' competition.pk %}">Editar informações</a>
-</div>
-
+{% url 'competitions:edit' competition.pk as hero_action_url %}
+{% include "competitions/competition_page_hero.html" with hero_title="Visão geral" hero_action_url=hero_action_url hero_action_label="Editar informações" hero_action_class="btn-outline-primary" %}
 {% include "competitions/competition_nav.html" %}
 
 <div class="summary-grid mb-4">
