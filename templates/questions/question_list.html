@@ -3,19 +3,12 @@
 {% block title %}Questões | {{ competition.name }}{% endblock %}
 
 {% block content %}
-<div class="page-heading mb-3">
-    <div>
-        <p class="eyebrow mb-1">PRÁTICA</p>
-        <h1 class="h2 mb-1">Questões</h1>
-        <p class="text-body-secondary mb-0">{{ competition.name }}</p>
-    </div>
-    {% if selected_discipline_link %}
-        <a class="btn btn-primary" href="{% url 'questions:question_create' competition.pk selected_discipline_link.pk %}">Adicionar questão</a>
-    {% else %}
-        <a class="btn btn-primary" href="{% url 'questions:question_choose_discipline' competition.pk %}">Adicionar questão</a>
-    {% endif %}
-</div>
-
+{% if selected_discipline_link %}
+    {% url 'questions:question_create' competition.pk selected_discipline_link.pk as hero_action_url %}
+{% else %}
+    {% url 'questions:question_choose_discipline' competition.pk as hero_action_url %}
+{% endif %}
+{% include "competitions/competition_page_hero.html" with hero_title="Questões" hero_action_url=hero_action_url hero_action_label="Adicionar questão" %}
 {% include "competitions/competition_nav.html" %}
 
 <div class="question-metrics mb-4">
