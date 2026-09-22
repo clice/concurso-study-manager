@@ -7,6 +7,11 @@ app_name = "questions"
 urlpatterns = [
     path("<int:pk>/questoes/", views.question_list, name="question_list"),
     path(
+        "<int:pk>/questoes/aulas/",
+        views.question_lessons,
+        name="question_lessons",
+    ),
+    path(
         "<int:pk>/questoes/nova/",
         views.question_choose_discipline,
         name="question_choose_discipline",
