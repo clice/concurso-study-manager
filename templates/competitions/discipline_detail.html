@@ -3,8 +3,7 @@
 {% block title %}{{ link.discipline.name }} | {{ competition.name }}{% endblock %}
 
 {% block content %}
-{% url 'competitions:discipline_edit' competition.pk link.pk as hero_action_url %}
-{% include "competitions/competition_page_hero.html" with hero_title=link.discipline.name hero_subtitle="Disciplina do concurso" hero_action_url=hero_action_url hero_action_label="Editar disciplina" hero_action_class="btn-outline-primary" %}
+{% include "competitions/competition_page_hero.html" with hero_title=link.discipline.name hero_subtitle="Disciplina do concurso" hero_action_url=edit_overview_url hero_action_label="Editar disciplina" hero_action_class="btn-outline-primary" %}
 {% include "competitions/competition_nav.html" %}
 
 <div class="discipline-summary-grid mb-4">
