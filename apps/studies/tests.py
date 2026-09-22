@@ -223,6 +223,25 @@ class LessonTests(TestCase):
         self.assertNotContains(response, second.code)
         self.assertEqual(response.context["filtered_total"], 1)
 
+    def test_lesson_list_is_paginated(self):
+        for number in range(55):
+            Lesson.objects.create(
+                competition_discipline=self.systems_link,
+                title=f"Aula {number:02d}",
+                status=Lesson.Status.NOT_STARTED,
+            )
+
+        response = self.client.get(
+            reverse("studies:lesson_list", kwargs={"pk": self.competition.pk})
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context["lessons"]), 50)
+        self.assertEqual(response.context["page_size"], 50)
+        self.assertEqual(response.context["page_obj"].paginator.num_pages, 2)
+        self.assertContains(response, "Mostrando")
+        self.assertContains(response, "Próxima")
+
     def test_lesson_list_has_separate_question_accuracy_columns(self):
         Lesson.objects.create(
             competition_discipline=self.systems_link,
