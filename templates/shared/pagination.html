@@ -1,0 +1,39 @@
+<div class="app-pagination-wrap">
+    <div class="app-pagination-summary">
+        Mostrando <strong>{{ page_obj.start_index }}–{{ page_obj.end_index }}</strong>
+        de <strong>{{ page_obj.paginator.count }}</strong>
+        {{ item_label_plural|default:"registros" }}.
+    </div>
+
+    {% if page_obj.paginator.num_pages > 1 %}
+        <nav class="app-pagination" aria-label="Paginação">
+            {% if page_obj.has_previous %}
+                <a class="app-page-link app-page-edge" href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}pagina=1" aria-label="Primeira página">«</a>
+                <a class="app-page-link app-page-text" href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}pagina={{ page_obj.previous_page_number }}">Anterior</a>
+            {% else %}
+                <span class="app-page-link app-page-edge disabled" aria-hidden="true">«</span>
+                <span class="app-page-link app-page-text disabled">Anterior</span>
+            {% endif %}
+
+            <div class="app-page-numbers">
+                {% for page_number in pagination_pages %}
+                    {% if page_number == pagination_ellipsis %}
+                        <span class="app-page-ellipsis">…</span>
+                    {% elif page_number == page_obj.number %}
+                        <span class="app-page-link active" aria-current="page">{{ page_number }}</span>
+                    {% else %}
+                        <a class="app-page-link" href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}pagina={{ page_number }}">{{ page_number }}</a>
+                    {% endif %}
+                {% endfor %}
+            </div>
+
+            {% if page_obj.has_next %}
+                <a class="app-page-link app-page-text" href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}pagina={{ page_obj.next_page_number }}">Próxima</a>
+                <a class="app-page-link app-page-edge" href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}pagina={{ page_obj.paginator.num_pages }}" aria-label="Última página">»</a>
+            {% else %}
+                <span class="app-page-link app-page-text disabled">Próxima</span>
+                <span class="app-page-link app-page-edge disabled" aria-hidden="true">»</span>
+            {% endif %}
+        </nav>
+    {% endif %}
+</div>
