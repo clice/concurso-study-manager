@@ -11,12 +11,32 @@
 {% include "competitions/competition_page_hero.html" with hero_title="Questões" hero_action_url=hero_action_url hero_action_label="Adicionar questão" %}
 {% include "competitions/competition_nav.html" %}
 
-<div class="question-metrics mb-4">
-    <div class="summary-item"><span>Questões exibidas</span><strong>{{ filtered_total }}</strong></div>
-    <div class="summary-item"><span>Acertos</span><strong>{{ correct_count }}</strong></div>
-    <div class="summary-item"><span>Erros</span><strong>{{ incorrect_count }}</strong></div>
-    <div class="summary-item"><span>% de acerto</span><strong>{% if accuracy is not None %}{{ accuracy|floatformat:"-1" }}%{% else %}—{% endif %}</strong></div>
-    <div class="summary-item"><span>Revisões pendentes</span><strong>{{ pending_reviews }}</strong></div>
+<div class="dashboard-kpis question-metrics mb-4">
+    <div class="dashboard-kpi dashboard-kpi-primary">
+        <div class="dashboard-kpi-label"><span>Questões exibidas</span><span class="dashboard-kpi-tag">VOLUME</span></div>
+        <strong>{{ filtered_total }}</strong>
+        <small>Registros considerados pelos filtros atuais</small>
+    </div>
+    <div class="dashboard-kpi">
+        <div class="dashboard-kpi-label"><span>Acertos</span><span class="dashboard-kpi-tag">RESULTADO</span></div>
+        <strong>{{ correct_count }}</strong>
+        <small>Questões contabilizadas como acerto</small>
+    </div>
+    <div class="dashboard-kpi">
+        <div class="dashboard-kpi-label"><span>Erros</span><span class="dashboard-kpi-tag">RESULTADO</span></div>
+        <strong>{{ incorrect_count }}</strong>
+        <small>Questões contabilizadas como erro</small>
+    </div>
+    <div class="dashboard-kpi">
+        <div class="dashboard-kpi-label"><span>Taxa de acerto</span><span class="dashboard-kpi-tag">DESEMPENHO</span></div>
+        <strong>{% if accuracy is not None %}{{ accuracy|floatformat:"-1" }}%{% else %}—{% endif %}</strong>
+        <small>Desconsidera questões não contabilizadas</small>
+    </div>
+    <div class="dashboard-kpi">
+        <div class="dashboard-kpi-label"><span>Revisões pendentes</span><span class="dashboard-kpi-tag">REVISÃO</span></div>
+        <strong>{{ pending_reviews }}</strong>
+        <small>Questões ainda marcadas para retorno</small>
+    </div>
 </div>
 
 <section class="content-card">
