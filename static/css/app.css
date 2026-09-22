@@ -1882,3 +1882,166 @@ details > summary::-webkit-details-marker {
         padding: .9rem 1.2rem;
     }
 }
+
+
+/* Shared pagination */
+.app-pagination-wrap {
+    align-items: center;
+    border-top: 1px solid #edf0f5;
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+    margin-top: 1rem;
+    padding-top: 1rem;
+}
+
+.app-pagination-summary {
+    color: var(--muted);
+    font-size: .78rem;
+}
+
+.app-pagination-summary strong {
+    color: var(--ink);
+    font-weight: 700;
+}
+
+.app-pagination {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: .35rem;
+    justify-content: flex-end;
+}
+
+.app-page-numbers {
+    align-items: center;
+    display: flex;
+    gap: .25rem;
+}
+
+.app-page-link {
+    align-items: center;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: .58rem;
+    color: var(--muted);
+    display: inline-flex;
+    font-size: .76rem;
+    font-weight: 700;
+    height: 2.15rem;
+    justify-content: center;
+    min-width: 2.15rem;
+    padding: 0 .55rem;
+    text-decoration: none;
+    transition: background-color .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease;
+}
+
+.app-page-link:hover {
+    background: var(--surface-subtle);
+    border-color: #c7d2e1;
+    color: var(--accent-strong);
+}
+
+.app-page-link.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    box-shadow: 0 4px 12px rgba(49, 95, 159, .18);
+    color: #fff;
+}
+
+.app-page-link.disabled {
+    background: #f8fafc;
+    color: #b4bdca;
+    cursor: default;
+}
+
+.app-page-text {
+    min-width: auto;
+    padding-inline: .72rem;
+}
+
+.app-page-edge {
+    font-size: .95rem;
+}
+
+.app-page-ellipsis {
+    color: #a0a9b8;
+    font-size: .8rem;
+    padding-inline: .25rem;
+}
+
+/* Reuse the dashboard card language across study screens. */
+.lesson-metrics .summary-item,
+.question-metrics .summary-item,
+.question-dashboard-kpis .summary-item,
+.discipline-summary-grid .summary-item,
+.summary-grid .summary-item {
+    border-radius: 1.05rem;
+    box-shadow: 0 8px 24px rgba(23, 32, 51, .04);
+    min-height: 104px;
+    padding: .95rem 1.05rem;
+}
+
+.lesson-metrics .summary-item > span,
+.question-metrics .summary-item > span,
+.question-dashboard-kpis .summary-item > span,
+.discipline-summary-grid .summary-item > span,
+.summary-grid .summary-item > span {
+    color: var(--muted);
+    font-size: .72rem;
+    font-weight: 650;
+}
+
+.lesson-metrics .summary-item > strong,
+.question-metrics .summary-item > strong,
+.question-dashboard-kpis .summary-item > strong {
+    font-size: 1.5rem;
+    letter-spacing: -.03em;
+    margin-top: .45rem;
+}
+
+.global-page-hero .competition-hero-kicker {
+    display: block;
+}
+
+.global-page-hero-side {
+    align-items: center;
+    justify-content: center;
+}
+
+.competition-hero-title-row {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: .75rem;
+}
+
+.competition-hero-title-row h1 {
+    margin-bottom: .25rem;
+}
+
+.competition-hero-action {
+    margin-top: .8rem;
+}
+
+@media (max-width: 768px) {
+    .app-pagination-wrap {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .app-pagination {
+        justify-content: flex-start;
+        width: 100%;
+    }
+
+    .app-page-text {
+        display: none;
+    }
+}
+
+@media (max-width: 420px) {
+    .app-page-numbers .app-page-link:not(.active) {
+        min-width: 2rem;
+    }
+}
