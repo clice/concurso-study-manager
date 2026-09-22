@@ -1,0 +1,13 @@
+<div class="row g-3">
+    <div class="col-12 col-md-4">{% include "competitions/field.html" with field=form.stage_type %}</div>
+    <div class="col-12 col-md-4">{% include "competitions/field.html" with field=form.scheduled_date %}</div>
+    <div class="col-12 col-md-4">{% include "competitions/field.html" with field=form.scheduled_time %}</div>
+    <div class="col-12 col-md-6">{% include "competitions/field.html" with field=form.max_score %}</div>
+    <div class="col-12 col-md-6">{% include "competitions/field.html" with field=form.minimum_score %}</div>
+    <div class="col-12 d-flex flex-wrap gap-4">
+        <div class="form-check">{{ form.eliminatory }} <label class="form-check-label" for="{{ form.eliminatory.id_for_label }}">Eliminatória</label></div>
+        <div class="form-check">{{ form.classificatory }} <label class="form-check-label" for="{{ form.classificatory.id_for_label }}">Classificatória</label></div>
+        <div class="form-check">{{ form.requires_nonzero_each_discipline }} <label class="form-check-label" for="{{ form.requires_nonzero_each_discipline.id_for_label }}">Não pode zerar nenhuma disciplina</label></div>
+    </div>
+    <div class="col-12">{% include "competitions/field.html" with field=form.details %}</div>
+</div>
