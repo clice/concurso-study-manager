@@ -3,15 +3,8 @@
 {% block title %}Questões gerais | Concurso Study Manager{% endblock %}
 
 {% block content %}
-<div class="page-heading mb-3">
-    <div>
-        <p class="eyebrow mb-1">HISTÓRICO GERAL</p>
-        <h1 class="h2 mb-1">Questões</h1>
-        <p class="text-body-secondary mb-0">Acompanhe as questões respondidas em todos os concursos.</p>
-    </div>
-    <a class="btn btn-primary" href="{% url 'questions_global:choose_competition' %}">Adicionar questão</a>
-</div>
-
+{% url 'questions_global:choose_competition' as hero_action_url %}
+{% include "shared/global_page_hero.html" with hero_kicker="HISTÓRICO GERAL" hero_title="Questões" hero_subtitle="Acompanhe as questões respondidas em todos os concursos." hero_action_url=hero_action_url hero_action_label="Adicionar questão" %}
 {% include "questions/global_question_nav.html" %}
 
 <div class="question-metrics question-metrics-global mb-4">
