@@ -101,7 +101,9 @@
     </form>
 
     {% if questions %}
-        <div class="table-responsive">
+        {% include "shared/pagination.html" with item_label_plural="questões" %}
+
+        <div class="table-responsive mt-3">
             <table class="table align-middle question-table question-table-compact question-table-global mb-0">
                 <colgroup>
                     <col class="question-col-date">
@@ -176,21 +178,7 @@
             </table>
         </div>
 
-        <div class="question-pagination-summary mt-3">
-            Mostrando {{ page_obj.start_index }}–{{ page_obj.end_index }} de {{ page_obj.paginator.count }} {% if page_obj.paginator.count == 1 %}questão{% else %}questões{% endif %}.
-        </div>
-
-        {% if page_obj.paginator.num_pages > 1 %}
-            <nav class="question-pagination mt-3" aria-label="Paginação das questões">
-                {% if page_obj.has_previous %}
-                    <a class="btn btn-sm btn-outline-secondary" href="?pagina={{ page_obj.previous_page_number }}&concurso={{ filters.competition }}&disciplina={{ filters.discipline }}&resultado={{ filters.result }}&revisao={{ filters.review }}&banca={{ filters.board|urlencode }}&inicio={{ filters.start }}&fim={{ filters.end }}&q={{ filters.q|urlencode }}">Anterior</a>
-                {% endif %}
-                <span>Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
-                {% if page_obj.has_next %}
-                    <a class="btn btn-sm btn-outline-secondary" href="?pagina={{ page_obj.next_page_number }}&concurso={{ filters.competition }}&disciplina={{ filters.discipline }}&resultado={{ filters.result }}&revisao={{ filters.review }}&banca={{ filters.board|urlencode }}&inicio={{ filters.start }}&fim={{ filters.end }}&q={{ filters.q|urlencode }}">Próxima</a>
-                {% endif %}
-            </nav>
-        {% endif %}
+        {% include "shared/pagination.html" with item_label_plural="questões" %}
     {% else %}
         <div class="soft-empty">Nenhuma questão encontrada com os filtros atuais.</div>
     {% endif %}
