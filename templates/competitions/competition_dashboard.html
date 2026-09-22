@@ -3,26 +3,52 @@
 {% block title %}Dashboard | {{ competition.name }}{% endblock %}
 
 {% block content %}
-<div class="page-heading mb-3">
-    <div>
-        <p class="eyebrow mb-1">ACOMPANHAMENTO</p>
-        <h1 class="h2 mb-1">Dashboard</h1>
-        <p class="text-body-secondary mb-0">{{ competition.name }}</p>
+<section class="competition-hero mb-3">
+    <div class="competition-hero-main">
+        <div class="competition-hero-kicker">
+            <span>{{ competition.name }}</span>
+            {% if competition.board %}<span class="competition-hero-dot">•</span><span>{{ competition.board.acronym }}</span>{% endif %}
+        </div>
+        <h1>Dashboard</h1>
+        <p>
+            {{ competition.role }}
+            {% if competition.location %}<span>·</span> {{ competition.location }}{% endif %}
+        </p>
     </div>
-    <a class="btn btn-outline-secondary" href="{% url 'competitions:detail' competition.pk %}">Voltar à visão geral</a>
-</div>
+    <div class="competition-hero-side">
+        {% if competition.exam_date %}
+            <span class="competition-hero-side-label">PROVA</span>
+            <strong>{{ competition.exam_date|date:"d M Y" }}</strong>
+            {% if days_to_exam is not None %}
+                {% if days_to_exam > 1 %}
+                    <span>{{ days_to_exam }} dias</span>
+                {% elif days_to_exam == 1 %}
+                    <span>1 dia</span>
+                {% elif days_to_exam == 0 %}
+                    <span>Hoje</span>
+                {% else %}
+                    <span>Realizada</span>
+                {% endif %}
+            {% endif %}
+        {% else %}
+            <span class="competition-hero-side-label">PROVA</span>
+            <strong>Sem data</strong>
+        {% endif %}
+    </div>
+</section>
 
 {% include "competitions/competition_nav.html" %}
 
 <div class="dashboard-kpis mb-4">
-    <div class="dashboard-kpi">
-        <span>Aulas concluídas</span>
-        <strong>{{ completed_lessons }} / {{ total_lessons }}</strong>
+    <div class="dashboard-kpi dashboard-kpi-primary">
+        <div class="dashboard-kpi-label"><span>Aulas concluídas</span><span class="dashboard-kpi-tag">AULAS</span></div>
+        <strong>{{ completed_lessons }} <em>/ {{ total_lessons }}</em></strong>
         <small>{{ lesson_progress|floatformat:"-1" }}% do curso</small>
+        <div class="dashboard-kpi-progress" aria-hidden="true"><span style="width: {% widthratio lesson_progress 100 100 %}%"></span></div>
     </div>
 
     <div class="dashboard-kpi">
-        <span>Questões feitas</span>
+        <div class="dashboard-kpi-label"><span>Questões feitas</span><span class="dashboard-kpi-tag">QUESTÕES</span></div>
         <strong>{{ total_questions }}</strong>
         <small>
             {% if overall_accuracy is not None %}
@@ -34,13 +60,13 @@
     </div>
 
     <div class="dashboard-kpi">
-        <span>Edital mapeado</span>
-        <strong>{{ covered_syllabus_items }} / {{ total_syllabus_items }}</strong>
+        <div class="dashboard-kpi-label"><span>Edital mapeado</span><span class="dashboard-kpi-tag">EDITAL</span></div>
+        <strong>{{ covered_syllabus_items }} <em>/ {{ total_syllabus_items }}</em></strong>
         <small>{{ syllabus_coverage|floatformat:"-1" }}% dos itens têm ao menos uma aula vinculada</small>
     </div>
 
     <div class="dashboard-kpi">
-        <span>Até a prova</span>
+        <div class="dashboard-kpi-label"><span>Até a prova</span><span class="dashboard-kpi-tag">PRAZO</span></div>
         {% if days_to_exam is None %}
             <strong>—</strong>
             <small>Data da prova não cadastrada</small>
