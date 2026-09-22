@@ -4,7 +4,7 @@
 
 {% block content %}
 {% url 'studies:lesson_list' competition.pk as hero_action_url %}
-{% include "competitions/competition_page_hero.html" with hero_title=page_title hero_subtitle=discipline_link.discipline.name hero_action_url=hero_action_url hero_action_label="Voltar às aulas" hero_action_class="btn-outline-primary" %}
+{% include "competitions/competition_page_hero.html" with hero_title=page_title hero_subtitle=discipline_link.discipline.name hero_action_url=hero_action_url hero_action_label="Voltar às aulas" hero_action_class="btn-outline-primary" hero_action_query=discipline_link.pk %}
 
 <form method="post" class="form-card">
     {% csrf_token %}
