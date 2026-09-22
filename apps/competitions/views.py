@@ -41,11 +41,14 @@ def _discipline_links(competition):
 def _overview_context(competition, **extra):
     stage_form = extra.pop("stage_form", None)
     if stage_form is None:
-        stage_form = CompetitionStageForm()
+        stage_form = CompetitionStageForm(auto_id="id_stage_new_%s")
 
     discipline_form = extra.pop("discipline_form", None)
     if discipline_form is None:
-        discipline_form = CompetitionDisciplineForm(competition=competition)
+        discipline_form = CompetitionDisciplineForm(
+            competition=competition,
+            auto_id="id_discipline_new_%s",
+        )
 
     stage_form_overrides = extra.pop("stage_form_overrides", {})
     discipline_form_overrides = extra.pop("discipline_form_overrides", {})
@@ -67,7 +70,10 @@ def _overview_context(competition, **extra):
         {
             "stage": stage,
             "form": stage_form_overrides.get(stage.id)
-            or CompetitionStageForm(instance=stage),
+            or CompetitionStageForm(
+                instance=stage,
+                auto_id=f"id_stage_{stage.id}_%s",
+            ),
             "open": open_stage_id == stage.id,
         }
         for stage in stages
@@ -81,6 +87,7 @@ def _overview_context(competition, **extra):
             or CompetitionDisciplineForm(
                 instance=link,
                 competition=competition,
+                auto_id=f"id_discipline_{link.id}_%s",
             ),
             "open": open_discipline_id == link.id,
         }
@@ -480,7 +487,10 @@ def stage_add(request, pk):
             f'{reverse("competitions:detail", kwargs={"pk": pk})}#etapas'
         )
 
-    form = CompetitionStageForm(request.POST)
+    form = CompetitionStageForm(
+        request.POST,
+        auto_id="id_stage_new_%s",
+    )
     if form.is_valid():
         stage = form.save(commit=False)
         stage.competition = competition
@@ -518,7 +528,11 @@ def stage_edit(request, pk, stage_id):
             f'?editar_etapa={stage.pk}#etapas'
         )
 
-    form = CompetitionStageForm(request.POST, instance=stage)
+    form = CompetitionStageForm(
+        request.POST,
+        instance=stage,
+        auto_id=f"id_stage_{stage.id}_%s",
+    )
     if form.is_valid():
         form.save()
         messages.success(
@@ -547,7 +561,11 @@ def discipline_add(request, pk):
             f'{reverse("competitions:detail", kwargs={"pk": pk})}#disciplinas'
         )
 
-    form = CompetitionDisciplineForm(request.POST, competition=competition)
+    form = CompetitionDisciplineForm(
+        request.POST,
+        competition=competition,
+        auto_id="id_discipline_new_%s",
+    )
     if form.is_valid():
         try:
             link = form.save()
@@ -594,6 +612,7 @@ def discipline_edit(request, pk, link_id):
         request.POST,
         instance=link,
         competition=competition,
+        auto_id=f"id_discipline_{link.id}_%s",
     )
 
     if form.is_valid():
