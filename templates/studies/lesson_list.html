@@ -77,7 +77,9 @@
     </form>
 
     {% if lessons %}
-        <div class="table-responsive">
+        {% include "shared/pagination.html" with item_label_plural="aulas" %}
+
+        <div class="table-responsive mt-3">
             <table class="table align-middle lesson-table mb-0">
                 <thead>
                     <tr>
@@ -158,6 +160,8 @@
                 </tbody>
             </table>
         </div>
+
+        {% include "shared/pagination.html" with item_label_plural="aulas" %}
     {% else %}
         <div class="soft-empty">Nenhuma aula encontrada com os filtros atuais.</div>
     {% endif %}
