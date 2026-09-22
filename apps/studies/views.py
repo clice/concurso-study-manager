@@ -1,3 +1,4 @@
+from django.core.paginator import Paginator
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -80,6 +81,11 @@ def lesson_list(request, pk):
         lesson.status == Lesson.Status.NOT_STARTED for lesson in lessons
     )
 
+    paginator = Paginator(lessons, 50)
+    page_obj = paginator.get_page(request.GET.get("pagina"))
+    pagination_query = request.GET.copy()
+    pagination_query.pop("pagina", None)
+
     weeks = list(
         Lesson.objects.filter(
             competition_discipline__competition=competition,
@@ -96,7 +102,16 @@ def lesson_list(request, pk):
         {
             "competition": competition,
             "active_tab": "lessons",
-            "lessons": lessons,
+            "lessons": page_obj.object_list,
+            "page_obj": page_obj,
+            "page_size": paginator.per_page,
+            "pagination_query": pagination_query.urlencode(),
+            "pagination_pages": paginator.get_elided_page_range(
+                page_obj.number,
+                on_each_side=2,
+                on_ends=1,
+            ),
+            "pagination_ellipsis": paginator.ELLIPSIS,
             "discipline_links": discipline_links,
             "selected_discipline_link": selected_discipline_link,
             "weeks": weeks,
