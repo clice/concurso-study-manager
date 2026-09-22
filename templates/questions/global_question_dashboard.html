@@ -3,15 +3,8 @@
 {% block title %}Dashboard de questões | Concurso Study Manager{% endblock %}
 
 {% block content %}
-<div class="page-heading mb-3">
-    <div>
-        <p class="eyebrow mb-1">HISTÓRICO GERAL</p>
-        <h1 class="h2 mb-1">Dashboard de questões</h1>
-        <p class="text-body-secondary mb-0">Evolução do desempenho ao longo do tempo e entre concursos.</p>
-    </div>
-    <a class="btn btn-primary" href="{% url 'questions_global:choose_competition' %}">Adicionar questão</a>
-</div>
-
+{% url 'questions_global:choose_competition' as hero_action_url %}
+{% include "shared/global_page_hero.html" with hero_kicker="HISTÓRICO GERAL" hero_title="Dashboard de questões" hero_subtitle="Evolução do desempenho ao longo do tempo e entre concursos." hero_action_url=hero_action_url hero_action_label="Adicionar questão" %}
 {% include "questions/global_question_nav.html" %}
 
 <form method="get" class="global-question-dashboard-filters content-card mb-4">
