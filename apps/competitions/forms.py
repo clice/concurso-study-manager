@@ -16,9 +16,17 @@ from .models import (
 class DateInput(forms.DateInput):
     input_type = "date"
 
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("format", "%Y-%m-%d")
+        super().__init__(*args, **kwargs)
+
 
 class TimeInput(forms.TimeInput):
     input_type = "time"
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("format", "%H:%M")
+        super().__init__(*args, **kwargs)
 
 
 class BRLCurrencyField(forms.CharField):
