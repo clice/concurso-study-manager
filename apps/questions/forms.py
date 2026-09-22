@@ -2,7 +2,7 @@ from django import forms
 
 from apps.studies.models import Lesson
 
-from .models import QuestionRecord
+from .models import QuestionRecord, normalize_board_name
 
 
 OTHER_BOARD_VALUE = "__other__"
@@ -78,18 +78,22 @@ class QuestionRecordForm(forms.ModelForm):
         if lesson and not self.is_bound:
             self.initial["lesson"] = lesson.pk
 
-        board_values = set(
-            QuestionRecord.objects.exclude(board="")
+        board_values = {
+            normalize_board_name(value)
+            for value in QuestionRecord.objects.exclude(board="")
             .values_list("board", flat=True)
             .distinct()
-        )
+            if normalize_board_name(value)
+        }
 
         if discipline_link and discipline_link.competition.board:
-            board_values.add(discipline_link.competition.board.acronym)
+            board_values.add(
+                normalize_board_name(discipline_link.competition.board.acronym)
+            )
 
         current_board = ""
         if self.instance and self.instance.pk:
-            current_board = self.instance.board or ""
+            current_board = normalize_board_name(self.instance.board)
             if current_board:
                 board_values.add(current_board)
 
@@ -152,7 +156,7 @@ class QuestionRecordForm(forms.ModelForm):
                     "Informe o nome da banca.",
                 )
             else:
-                cleaned["board"] = board_other
+                cleaned["board"] = normalize_board_name(board_other)
 
         return cleaned
 
@@ -161,7 +165,9 @@ class QuestionRecordForm(forms.ModelForm):
         if not record.competition_discipline_id:
             record.competition_discipline = self.discipline_link
 
-        selected_board = self.cleaned_data.get("board", "")
+        selected_board = normalize_board_name(
+            self.cleaned_data.get("board", "")
+        )
         if selected_board:
             record.board = selected_board
 
