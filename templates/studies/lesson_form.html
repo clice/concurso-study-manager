@@ -3,14 +3,8 @@
 {% block title %}{{ page_title }} | {{ competition.name }}{% endblock %}
 
 {% block content %}
-<div class="page-heading mb-4">
-    <div>
-        <p class="eyebrow mb-1">AULAS</p>
-        <h1 class="h2 mb-1">{{ page_title }}</h1>
-        <p class="text-body-secondary mb-0">{{ competition.name }}</p>
-    </div>
-    <a class="btn btn-outline-secondary" href="{% url 'studies:lesson_list' competition.pk %}?disciplina={{ discipline_link.pk }}">Voltar</a>
-</div>
+{% url 'studies:lesson_list' competition.pk as hero_action_url %}
+{% include "competitions/competition_page_hero.html" with hero_title=page_title hero_subtitle=discipline_link.discipline.name hero_action_url=hero_action_url hero_action_label="Voltar às aulas" hero_action_class="btn-outline-primary" %}
 
 <form method="post" class="form-card">
     {% csrf_token %}
