@@ -3,21 +3,8 @@
 {% block title %}{{ question.code }} | {{ competition.name }}{% endblock %}
 
 {% block content %}
-<div class="page-heading mb-3">
-    <div>
-        <p class="eyebrow mb-1">QUESTÃO</p>
-        <div class="question-detail-title-row">
-            <h1 class="h2 mb-1">{{ question.code }}</h1>
-            <span class="question-result question-result-{{ question.result }}">{{ question.get_result_display }}</span>
-        </div>
-        <p class="text-body-secondary mb-0">{{ competition.name }} · {{ question.competition_discipline.discipline.name }}</p>
-    </div>
-    <div class="d-flex gap-2">
-        <a class="btn btn-outline-secondary" href="{% url 'questions:question_list' competition.pk %}">Voltar</a>
-        <a class="btn btn-primary" href="{% url 'questions:question_edit' competition.pk question.pk %}">Editar questão</a>
-    </div>
-</div>
-
+{% url 'questions:question_edit' competition.pk question.pk as hero_action_url %}
+{% include "competitions/competition_page_hero.html" with hero_title=question.code hero_subtitle=question.competition_discipline.discipline.name hero_status=question.get_result_display hero_status_class=question.result hero_action_url=hero_action_url hero_action_label="Editar questão" %}
 {% include "competitions/competition_nav.html" %}
 
 <div class="question-detail-grid">
