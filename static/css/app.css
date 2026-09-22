@@ -2160,3 +2160,211 @@ details > summary::-webkit-details-marker {
         grid-template-columns: 1fr;
     }
 }
+
+
+/* Competition overview as the management hub */
+.overview-management-section {
+    scroll-margin-top: 1rem;
+}
+
+.overview-management-list,
+.overview-discipline-list {
+    border-top: 1px solid var(--line);
+}
+
+.overview-management-item,
+.overview-discipline-item {
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    flex-wrap: wrap;
+    gap: .75rem 1rem;
+    padding: 1rem 0;
+}
+
+.overview-management-item:last-child,
+.overview-discipline-item:last-child {
+    border-bottom: 0;
+}
+
+.overview-management-main {
+    align-items: flex-start;
+    display: flex;
+    flex: 1 1 640px;
+    gap: .8rem;
+    min-width: 0;
+}
+
+.overview-management-copy {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.overview-inline-editor {
+    flex: 0 0 auto;
+    min-width: 0;
+}
+
+.overview-inline-editor[open] {
+    flex-basis: 100%;
+    width: 100%;
+}
+
+.overview-inline-editor[open] > summary {
+    margin-left: auto;
+}
+
+.overview-inline-editor > .nested-form {
+    border-style: solid;
+    margin-top: .8rem !important;
+}
+
+.overview-add-form {
+    margin-top: .35rem;
+}
+
+.overview-discipline-header,
+.overview-discipline-main {
+    align-items: center;
+    display: grid;
+    gap: .75rem;
+    grid-template-columns:
+        minmax(270px, 2fr)
+        minmax(130px, .9fr)
+        90px
+        92px
+        72px
+        86px;
+}
+
+.overview-discipline-header {
+    color: var(--muted);
+    font-size: .68rem;
+    font-weight: 800;
+    letter-spacing: .04em;
+    padding: .65rem 0;
+    text-transform: uppercase;
+}
+
+.overview-discipline-header span:last-child {
+    display: none;
+}
+
+.overview-discipline-item {
+    align-items: flex-start;
+}
+
+.overview-discipline-main {
+    flex: 1 1 820px;
+    min-width: 0;
+}
+
+.overview-discipline-name {
+    align-items: center;
+    display: flex;
+    gap: .5rem;
+    min-width: 0;
+}
+
+.overview-discipline-link {
+    color: var(--ink);
+    display: block;
+    font-size: .86rem;
+    font-weight: 750;
+    overflow: hidden;
+    text-decoration: none;
+    text-overflow: ellipsis;
+}
+
+.overview-discipline-link:hover {
+    color: var(--accent-strong);
+    text-decoration: underline;
+}
+
+.overview-discipline-score {
+    color: var(--muted);
+    display: block;
+    font-size: .68rem;
+    margin-top: .15rem;
+}
+
+.overview-discipline-main > span {
+    color: #475569;
+    font-size: .78rem;
+}
+
+.overview-discipline-item .overview-inline-editor {
+    margin-left: auto;
+}
+
+.overview-discipline-item .overview-inline-editor[open] {
+    margin-left: 0;
+}
+
+.app-global-nav .btn-outline-primary {
+    --bs-btn-color: var(--accent-strong);
+    --bs-btn-border-color: #bfd0e5;
+    --bs-btn-hover-bg: var(--accent-soft);
+    --bs-btn-hover-color: var(--accent-strong);
+    --bs-btn-hover-border-color: #a9bfd9;
+}
+
+@media (max-width: 1100px) {
+    .overview-discipline-header {
+        display: none;
+    }
+
+    .overview-discipline-main {
+        grid-template-columns: minmax(260px, 1.8fr) repeat(5, auto);
+    }
+}
+
+@media (max-width: 820px) {
+    .overview-discipline-main {
+        align-items: start;
+        grid-template-columns: minmax(0, 1fr) auto auto;
+    }
+
+    .overview-discipline-name {
+        grid-column: 1 / -1;
+    }
+
+    .overview-discipline-main > span:nth-of-type(1)::before {
+        content: "Grupo: ";
+        color: var(--muted);
+    }
+
+    .overview-discipline-main > span:nth-of-type(4)::before {
+        content: "Peso: ";
+        color: var(--muted);
+    }
+
+    .overview-discipline-main > span:nth-of-type(5)::before {
+        content: "Edital: ";
+        color: var(--muted);
+    }
+}
+
+@media (max-width: 576px) {
+    .overview-management-item,
+    .overview-discipline-item {
+        flex-direction: column;
+    }
+
+    .overview-inline-editor,
+    .overview-inline-editor > summary {
+        width: 100%;
+    }
+
+    .overview-inline-editor[open] > summary {
+        margin-left: 0;
+    }
+
+    .overview-discipline-main {
+        grid-template-columns: 1fr 1fr;
+        width: 100%;
+    }
+
+    .overview-discipline-name {
+        grid-column: 1 / -1;
+    }
+}
