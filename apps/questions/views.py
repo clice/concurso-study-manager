@@ -1,6 +1,7 @@
 from django.core.paginator import Paginator
 from django.db.models import Count, Min, Q
 from django.db.models.functions import TruncMonth
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.dateparse import parse_date
@@ -9,7 +10,7 @@ from apps.competitions.models import Competition, CompetitionDiscipline, Discipl
 from apps.studies.models import Lesson
 
 from .forms import QuestionRecordForm
-from .models import QuestionRecord
+from .models import QuestionRecord, normalize_board_name
 
 
 def question_list(request, pk):
@@ -81,7 +82,7 @@ def question_list(request, pk):
         questions = questions.filter(review_required=False)
 
     if board:
-        questions = questions.filter(board__icontains=board)
+        questions = questions.filter(board=normalize_board_name(board))
 
     parsed_date = parse_date(date_value) if date_value else None
     if parsed_date:
@@ -133,14 +134,16 @@ def question_list(request, pk):
     pagination_query = request.GET.copy()
     pagination_query.pop("pagina", None)
 
-    boards = list(
-        QuestionRecord.objects.filter(
-            competition_discipline__competition=competition
-        )
-        .exclude(board="")
-        .values_list("board", flat=True)
-        .distinct()
-        .order_by("board")
+    boards = sorted(
+        {
+            normalize_board_name(value)
+            for value in QuestionRecord.objects.filter(
+                competition_discipline__competition=competition
+            )
+            .exclude(board="")
+            .values_list("board", flat=True)
+            if normalize_board_name(value)
+        }
     )
 
     return render(
@@ -180,6 +183,37 @@ def question_list(request, pk):
             ),
             "pagination_ellipsis": paginator.ELLIPSIS,
         },
+    )
+
+
+def question_lessons(request, pk):
+    competition = get_object_or_404(Competition, pk=pk)
+    discipline_id = request.GET.get("disciplina", "").strip()
+
+    if not discipline_id.isdigit():
+        return JsonResponse({"lessons": []})
+
+    link = get_object_or_404(
+        CompetitionDiscipline,
+        pk=int(discipline_id),
+        competition=competition,
+    )
+    lessons = (
+        Lesson.objects.filter(competition_discipline=link)
+        .order_by("position", "id")
+        .values("id", "code", "title")
+    )
+
+    return JsonResponse(
+        {
+            "lessons": [
+                {
+                    "id": lesson["id"],
+                    "label": f'{lesson["code"]} — {lesson["title"]}',
+                }
+                for lesson in lessons
+            ]
+        }
     )
 
 
@@ -345,7 +379,7 @@ def _global_question_filters(request, queryset):
         queryset = queryset.filter(review_required=False)
 
     if board:
-        queryset = queryset.filter(board=board)
+        queryset = queryset.filter(board=normalize_board_name(board))
 
     parsed_start = parse_date(start_date) if start_date else None
     if parsed_start:
@@ -433,11 +467,13 @@ def global_question_list(request):
         .distinct()
         .order_by("name")
     )
-    boards = list(
-        QuestionRecord.objects.exclude(board="")
-        .values_list("board", flat=True)
-        .distinct()
-        .order_by("board")
+    boards = sorted(
+        {
+            normalize_board_name(value)
+            for value in QuestionRecord.objects.exclude(board="")
+            .values_list("board", flat=True)
+            if normalize_board_name(value)
+        }
     )
 
     return render(
