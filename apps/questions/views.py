@@ -656,11 +656,13 @@ def global_question_dashboard(request):
         .distinct()
         .order_by("name")
     )
-    boards = list(
-        QuestionRecord.objects.exclude(board="")
-        .values_list("board", flat=True)
-        .distinct()
-        .order_by("board")
+    boards = sorted(
+        {
+            normalize_board_name(value)
+            for value in QuestionRecord.objects.exclude(board="")
+            .values_list("board", flat=True)
+            if normalize_board_name(value)
+        }
     )
 
     return render(
