@@ -29,6 +29,17 @@
         {% if competition.exam_date %}
             <span class="competition-hero-side-label">PROVA</span>
             <strong>{{ competition.exam_date|date:"d/m/Y" }}</strong>
+            {% if days_to_exam is not None %}
+                {% if days_to_exam > 1 %}
+                    <span>{{ days_to_exam }} dias</span>
+                {% elif days_to_exam == 1 %}
+                    <span>1 dia</span>
+                {% elif days_to_exam == 0 %}
+                    <span>Hoje</span>
+                {% else %}
+                    <span>Realizada</span>
+                {% endif %}
+            {% endif %}
         {% else %}
             <span class="competition-hero-side-label">PROVA</span>
             <strong>Sem data</strong>

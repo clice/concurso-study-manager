@@ -4,8 +4,7 @@
 {% block title %}{{ competition.name }} | Concurso Study Manager{% endblock %}
 
 {% block content %}
-{% url 'competitions:edit' competition.pk as hero_action_url %}
-{% include "competitions/competition_page_hero.html" with hero_title="Visão geral" hero_action_url=hero_action_url hero_action_label="Editar informações" hero_action_class="btn-outline-primary" %}
+{% include "competitions/competition_page_hero.html" with hero_title="Visão geral" %}
 {% include "competitions/competition_nav.html" %}
 
 <div class="summary-grid mb-4">
@@ -26,90 +25,194 @@
     </div>
 </div>
 
-<section class="content-card mb-4">
+<section class="content-card mb-4 overview-management-section" id="etapas">
     <div class="content-card-header mb-3">
         <div>
             <p class="eyebrow mb-1">ESTRUTURA DO CONCURSO</p>
             <h2 class="h4 mb-1">Etapas</h2>
-            <p class="text-body-secondary small mb-0">{{ stage_count }} etapa{{ stage_count|pluralize }} cadastrada{{ stage_count|pluralize }}.</p>
+            <p class="text-body-secondary small mb-0">
+                {{ stage_count }} etapa{{ stage_count|pluralize }} cadastrada{{ stage_count|pluralize }}.
+                Arraste pelo ícone para reorganizar.
+            </p>
         </div>
-        <a class="btn btn-sm btn-outline-primary" href="{% url 'competitions:structure' competition.pk %}#etapas">Gerenciar estrutura</a>
     </div>
 
-    {% if competition.stages.all %}
-        <div class="overview-stage-list">
-            {% for stage in competition.stages.all %}
-                <div class="overview-stage">
-                    <div>
-                        <strong>{{ stage.get_stage_type_display }}</strong>
-                        <div class="small text-body-secondary mt-1">
-                            {% if stage.scheduled_date %}{{ stage.scheduled_date|date:"d/m/Y" }}{% endif %}
-                            {% if stage.scheduled_time %}{% if stage.scheduled_date %} · {% endif %}{{ stage.scheduled_time|time:"H:i" }}{% endif %}
-                            {% if stage.max_score %} · Máx. {{ stage.max_score|floatformat:"-2" }} pts{% endif %}
-                            {% if stage.minimum_score %} · Mín. {{ stage.minimum_score|floatformat:"-2" }} pts{% endif %}
+    {% if stage_rows %}
+        <div class="overview-management-list mb-3" data-sortable-list data-reorder-url="{% url 'competitions:stage_reorder' competition.pk %}">
+            {% for row in stage_rows %}
+                <div class="overview-management-item sortable-item" data-sortable-item data-id="{{ row.stage.id }}">
+                    <div class="overview-management-main">
+                        <button
+                            class="drag-handle"
+                            type="button"
+                            draggable="true"
+                            data-drag-handle
+                            aria-label="Reordenar {{ row.stage.get_stage_type_display }}"
+                            title="Arraste para mudar a ordem"
+                        >☰</button>
+
+                        <div class="overview-management-copy">
+                            <div class="d-flex flex-wrap align-items-center gap-2">
+                                <strong>{{ row.stage.get_stage_type_display }}</strong>
+                                {% if row.stage.eliminatory %}<span class="badge rounded-pill badge-soft-danger">Eliminatória</span>{% endif %}
+                                {% if row.stage.classificatory %}<span class="badge rounded-pill badge-soft-success">Classificatória</span>{% endif %}
+                            </div>
+                            <div class="small text-body-secondary mt-1">
+                                {% if row.stage.scheduled_date %}{{ row.stage.scheduled_date|date:"d/m/Y" }}{% endif %}
+                                {% if row.stage.scheduled_time %}{% if row.stage.scheduled_date %} · {% endif %}{{ row.stage.scheduled_time|time:"H:i" }}{% endif %}
+                                {% if row.stage.max_score %} · Máx. {{ row.stage.max_score|floatformat:"-2" }} pts{% endif %}
+                                {% if row.stage.minimum_score %} · Mín. {{ row.stage.minimum_score|floatformat:"-2" }} pts{% endif %}
+                            </div>
+                            {% if row.stage.minimum_score or row.stage.requires_nonzero_each_discipline %}
+                                <div class="approval-rule mt-2">
+                                    <strong>Critério de aprovação:</strong>
+                                    {% if row.stage.minimum_score %}mínimo de {{ row.stage.minimum_score|floatformat:"-2" }} pontos{% endif %}
+                                    {% if row.stage.minimum_score and row.stage.requires_nonzero_each_discipline %} e {% endif %}
+                                    {% if row.stage.requires_nonzero_each_discipline %}não zerar nenhuma disciplina{% endif %}.
+                                </div>
+                            {% endif %}
+                            {% if row.stage.details %}<p class="small mb-0 mt-2">{{ row.stage.details }}</p>{% endif %}
                         </div>
                     </div>
-                    <div class="d-flex flex-wrap gap-1">
-                        {% if stage.eliminatory %}<span class="badge rounded-pill badge-soft-danger">Eliminatória</span>{% endif %}
-                        {% if stage.classificatory %}<span class="badge rounded-pill badge-soft-success">Classificatória</span>{% endif %}
-                    </div>
+
+                    <details
+                        class="overview-inline-editor"
+                        {% if row.open %}open{% endif %}
+                        data-collapsible-form
+                        data-open-label="Fechar edição"
+                        data-closed-label="Editar"
+                    >
+                        <summary class="btn btn-sm btn-outline-primary">Editar</summary>
+                        <form class="nested-form mt-3" method="post" action="{% url 'competitions:stage_edit' competition.pk row.stage.pk %}">
+                            {% csrf_token %}
+                            {% include "competitions/stage_fields.html" with form=row.form %}
+                            <div class="d-flex justify-content-end mt-3">
+                                <button class="btn btn-primary" type="submit">Salvar etapa</button>
+                            </div>
+                        </form>
+                    </details>
                 </div>
             {% endfor %}
         </div>
     {% else %}
-        <div class="soft-empty">Nenhuma etapa cadastrada ainda.</div>
+        <div class="soft-empty mb-3">Nenhuma etapa cadastrada ainda.</div>
     {% endif %}
+
+    <details
+        class="overview-add-form"
+        {% if open_section == "stages" %}open{% endif %}
+        data-collapsible-form
+        data-open-label="Cancelar etapa"
+        data-closed-label="Adicionar etapa"
+    >
+        <summary class="btn btn-outline-primary">Adicionar etapa</summary>
+        <form class="nested-form mt-3" method="post" action="{% url 'competitions:stage_add' competition.pk %}">
+            {% csrf_token %}
+            {% include "competitions/stage_fields.html" with form=stage_form %}
+            <button class="btn btn-primary mt-3" type="submit">Salvar etapa</button>
+        </form>
+    </details>
 </section>
 
-<section class="content-card mb-4">
+<section class="content-card overview-management-section" id="disciplinas">
     <div class="content-card-header mb-3">
         <div>
             <p class="eyebrow mb-1">PROGRAMA DA PROVA</p>
             <h2 class="h4 mb-1">Disciplinas</h2>
-            <p class="text-body-secondary small mb-1">{{ discipline_count }} disciplina{{ discipline_count|pluralize }} cadastrada{{ discipline_count|pluralize }}.</p>
+            <p class="text-body-secondary small mb-1">
+                {{ discipline_count }} disciplina{{ discipline_count|pluralize }} cadastrada{{ discipline_count|pluralize }}.
+                Clique no nome para abrir a disciplina; arraste pelo ícone para reorganizar.
+            </p>
             <p class="estimate-legend mb-0"><span class="estimate-marker" aria-hidden="true">E</span> indica quantidade estimada de questões.</p>
         </div>
-        <a class="btn btn-sm btn-outline-primary" href="{% url 'competitions:structure' competition.pk %}#disciplinas">Gerenciar disciplinas</a>
     </div>
 
-    {% if discipline_links %}
-        <div class="discipline-card-grid">
-            {% for link in discipline_links %}
-                <a class="discipline-card" href="{% url 'competitions:discipline_detail' competition.pk link.pk %}">
-                    <div class="d-flex align-items-start justify-content-between gap-3">
-                        <div>
-                            <strong class="discipline-card-title">{{ link.discipline.name }}</strong>
-                            <span class="discipline-card-subtitle">{{ link.get_knowledge_area_display }}</span>
+    <datalist id="discipline-options">
+        {% for name in discipline_names %}<option value="{{ name }}">{% endfor %}
+    </datalist>
+
+    {% if discipline_rows %}
+        <div class="overview-discipline-list mb-3" data-sortable-list data-reorder-url="{% url 'competitions:discipline_reorder' competition.pk %}">
+            <div class="overview-discipline-header" aria-hidden="true">
+                <span>Disciplina</span>
+                <span>Grupo</span>
+                <span>Prioridade</span>
+                <span>Questões</span>
+                <span>Peso</span>
+                <span>Edital</span>
+            </div>
+
+            {% for row in discipline_rows %}
+                <div class="overview-discipline-item sortable-item" data-sortable-item data-id="{{ row.link.id }}">
+                    <div class="overview-discipline-main">
+                        <div class="overview-discipline-name">
+                            <button
+                                class="drag-handle drag-handle-table"
+                                type="button"
+                                draggable="true"
+                                data-drag-handle
+                                aria-label="Reordenar {{ row.link.discipline.name }}"
+                                title="Arraste para mudar a ordem"
+                            >☰</button>
+                            <div>
+                                <a class="overview-discipline-link" href="{% url 'competitions:discipline_detail' competition.pk row.link.pk %}">
+                                    {{ row.link.discipline.name }}
+                                </a>
+                                <span class="overview-discipline-score">
+                                    Máx. {{ row.link.max_score|default:"—" }} · Mín. {{ row.link.minimum_score|default:"—" }}
+                                </span>
+                            </div>
                         </div>
-                        <span class="priority-pill priority-{{ link.priority|lower }}">{{ link.priority }}</span>
-                    </div>
-                    <div class="discipline-card-stats">
+                        <span>{{ row.link.get_knowledge_area_display }}</span>
+                        <span><span class="priority-pill priority-{{ row.link.priority|lower }}">{{ row.link.priority }}</span></span>
                         <span>
-                            <strong>{{ link.expected_questions|default:"—" }}</strong>
-                            questões
-                            {% if link.expected_questions is not None and link.question_count_kind == "estimated" %}
-                                <span class="estimate-marker ms-1" title="Estimativa" aria-label="Estimativa">E</span>
-                            {% endif %}
+                            {% if row.link.expected_questions is not None %}
+                                {{ row.link.expected_questions }}
+                                {% if row.link.question_count_kind == "estimated" %}
+                                    <span class="estimate-marker ms-1" title="Estimativa" aria-label="Estimativa">E</span>
+                                {% endif %}
+                            {% else %}—{% endif %}
                         </span>
-                        <span><strong>{{ link.weight|default:"—" }}</strong> peso</span>
-                        <span><strong>{{ link.syllabus_item_count }}</strong> itens do edital</span>
+                        <span>{{ row.link.weight|default:"—" }}</span>
+                        <span>{{ row.link.syllabus_item_count }} itens</span>
                     </div>
-                </a>
+
+                    <details
+                        class="overview-inline-editor"
+                        {% if row.open %}open{% endif %}
+                        data-collapsible-form
+                        data-open-label="Fechar edição"
+                        data-closed-label="Editar"
+                    >
+                        <summary class="btn btn-sm btn-outline-primary">Editar</summary>
+                        <form class="nested-form mt-3" method="post" action="{% url 'competitions:discipline_edit' competition.pk row.link.pk %}">
+                            {% csrf_token %}
+                            {% include "competitions/discipline_fields.html" with form=row.form %}
+                            <div class="d-flex justify-content-end mt-3">
+                                <button class="btn btn-primary" type="submit">Salvar disciplina</button>
+                            </div>
+                        </form>
+                    </details>
+                </div>
             {% endfor %}
         </div>
     {% else %}
-        <div class="soft-empty">Nenhuma disciplina associada ainda.</div>
+        <div class="soft-empty mb-3">Nenhuma disciplina associada ainda.</div>
     {% endif %}
-</section>
 
-<section class="content-card">
-    <div class="content-card-header">
-        <div>
-            <p class="eyebrow mb-1">EDITAL</p>
-            <h2 class="h4 mb-1">Edital verticalizado</h2>
-            <p class="text-body-secondary small mb-0">{{ total_syllabus_items }} itens distribuídos em {{ discipline_count }} disciplinas.</p>
-        </div>
-        <a class="btn btn-sm btn-primary" href="{% url 'competitions:syllabus' competition.pk %}">Ver edital completo</a>
-    </div>
+    <details
+        class="overview-add-form"
+        {% if open_section == "disciplines" %}open{% endif %}
+        data-collapsible-form
+        data-open-label="Cancelar disciplina"
+        data-closed-label="Adicionar disciplina"
+    >
+        <summary class="btn btn-outline-primary">Adicionar disciplina</summary>
+        <form class="nested-form mt-3" method="post" action="{% url 'competitions:discipline_add' competition.pk %}">
+            {% csrf_token %}
+            {% include "competitions/discipline_fields.html" with form=discipline_form %}
+            <button class="btn btn-primary mt-3" type="submit">Associar disciplina</button>
+        </form>
+    </details>
 </section>
 {% endblock %}

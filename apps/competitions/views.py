@@ -38,7 +38,24 @@ def _discipline_links(competition):
     )
 
 
-def _overview_context(competition):
+def _overview_context(competition, **extra):
+    stage_form = extra.pop("stage_form", None)
+    if stage_form is None:
+        stage_form = CompetitionStageForm(auto_id="id_stage_new_%s")
+
+    discipline_form = extra.pop("discipline_form", None)
+    if discipline_form is None:
+        discipline_form = CompetitionDisciplineForm(
+            competition=competition,
+            auto_id="id_discipline_new_%s",
+        )
+
+    stage_form_overrides = extra.pop("stage_form_overrides", {})
+    discipline_form_overrides = extra.pop("discipline_form_overrides", {})
+    open_stage_id = extra.pop("open_stage_id", None)
+    open_discipline_id = extra.pop("open_discipline_id", None)
+    open_section = extra.pop("open_section", "")
+
     totals = competition.discipline_links.aggregate(
         total_questions=Sum("expected_questions"),
         total_max_score=Sum("max_score"),
@@ -47,19 +64,64 @@ def _overview_context(competition):
         expected_questions__isnull=False,
         question_count_kind=CompetitionDiscipline.QuestionCountKind.ESTIMATED,
     ).exists()
-    discipline_links = _discipline_links(competition)
 
-    return {
+    stages = list(competition.stages.order_by("position", "id"))
+    stage_rows = [
+        {
+            "stage": stage,
+            "form": stage_form_overrides.get(stage.id)
+            or CompetitionStageForm(
+                instance=stage,
+                auto_id=f"id_stage_{stage.id}_%s",
+            ),
+            "open": open_stage_id == stage.id,
+        }
+        for stage in stages
+    ]
+
+    discipline_links = _discipline_links(competition)
+    discipline_rows = [
+        {
+            "link": link,
+            "form": discipline_form_overrides.get(link.id)
+            or CompetitionDisciplineForm(
+                instance=link,
+                competition=competition,
+                auto_id=f"id_discipline_{link.id}_%s",
+            ),
+            "open": open_discipline_id == link.id,
+        }
+        for link in discipline_links
+    ]
+
+    days_to_exam = None
+    if competition.exam_date:
+        days_to_exam = (competition.exam_date - timezone.localdate()).days
+
+    context = {
         "competition": competition,
         "active_tab": "overview",
         "discipline_links": discipline_links,
+        "discipline_rows": discipline_rows,
         "discipline_count": len(discipline_links),
-        "stage_count": competition.stages.count(),
-        "total_syllabus_items": sum(link.syllabus_item_count for link in discipline_links),
+        "stage_rows": stage_rows,
+        "stage_count": len(stages),
+        "stage_form": stage_form,
+        "discipline_form": discipline_form,
+        "discipline_names": Discipline.objects.values_list(
+            "name", flat=True
+        ).order_by("name"),
+        "open_section": open_section,
+        "total_syllabus_items": sum(
+            link.syllabus_item_count for link in discipline_links
+        ),
         "total_questions": totals["total_questions"],
         "total_max_score": totals["total_max_score"],
         "has_estimates": has_estimates,
+        "days_to_exam": days_to_exam,
     }
+    context.update(extra)
+    return context
 
 
 def _structure_context(competition, **extra):
@@ -150,26 +212,31 @@ def competition_detail(request, pk):
         Competition.objects.prefetch_related("stages"),
         pk=pk,
     )
+
+    try:
+        open_stage_id = int(request.GET.get("editar_etapa", ""))
+    except (TypeError, ValueError):
+        open_stage_id = None
+
+    try:
+        open_discipline_id = int(request.GET.get("editar_disciplina", ""))
+    except (TypeError, ValueError):
+        open_discipline_id = None
+
     return render(
         request,
         "competitions/competition_detail.html",
-        _overview_context(competition),
+        _overview_context(
+            competition,
+            open_stage_id=open_stage_id,
+            open_discipline_id=open_discipline_id,
+        ),
     )
 
 
 def competition_structure(request, pk):
-    competition = get_object_or_404(
-        Competition.objects.prefetch_related(
-            "stages",
-            "discipline_links__discipline",
-        ),
-        pk=pk,
-    )
-    return render(
-        request,
-        "competitions/competition_structure.html",
-        _structure_context(competition),
-    )
+    _competition_or_404(pk)
+    return redirect("competitions:detail", pk=pk)
 
 
 def competition_syllabus(request, pk):
@@ -405,6 +472,10 @@ def discipline_detail(request, pk, link_id):
             "syllabus_item_count": len(syllabus_items),
             "lesson_count": link.lessons.count(),
             "active_tab": "overview",
+            "edit_overview_url": (
+                f'{reverse("competitions:detail", kwargs={"pk": competition.pk})}'
+                f'?editar_disciplina={link.pk}#disciplinas'
+            ),
         },
     )
 
@@ -412,20 +483,30 @@ def discipline_detail(request, pk, link_id):
 def stage_add(request, pk):
     competition = _competition_or_404(pk)
     if request.method != "POST":
-        return redirect("competitions:structure", pk=pk)
+        return redirect(
+            f'{reverse("competitions:detail", kwargs={"pk": pk})}#etapas'
+        )
 
-    form = CompetitionStageForm(request.POST)
+    form = CompetitionStageForm(
+        request.POST,
+        auto_id="id_stage_new_%s",
+    )
     if form.is_valid():
         stage = form.save(commit=False)
         stage.competition = competition
         stage.save()
-        messages.success(request, f'Etapa "{stage.get_stage_type_display()}" adicionada.')
-        return redirect(f'{reverse("competitions:structure", kwargs={"pk": pk})}#etapas')
+        messages.success(
+            request,
+            f'Etapa "{stage.get_stage_type_display()}" adicionada.',
+        )
+        return redirect(
+            f'{reverse("competitions:detail", kwargs={"pk": pk})}#etapas'
+        )
 
     return render(
         request,
-        "competitions/competition_structure.html",
-        _structure_context(
+        "competitions/competition_detail.html",
+        _overview_context(
             competition,
             stage_form=form,
             open_section="stages",
@@ -440,43 +521,72 @@ def stage_edit(request, pk, stage_id):
         pk=stage_id,
         competition=competition,
     )
-    form = CompetitionStageForm(request.POST or None, instance=stage)
 
-    if request.method == "POST" and form.is_valid():
+    if request.method != "POST":
+        return redirect(
+            f'{reverse("competitions:detail", kwargs={"pk": pk})}'
+            f'?editar_etapa={stage.pk}#etapas'
+        )
+
+    form = CompetitionStageForm(
+        request.POST,
+        instance=stage,
+        auto_id=f"id_stage_{stage.id}_%s",
+    )
+    if form.is_valid():
         form.save()
-        messages.success(request, f'Etapa "{stage.get_stage_type_display()}" atualizada.')
-        return redirect(f'{reverse("competitions:structure", kwargs={"pk": pk})}#etapas')
+        messages.success(
+            request,
+            f'Etapa "{stage.get_stage_type_display()}" atualizada.',
+        )
+        return redirect(
+            f'{reverse("competitions:detail", kwargs={"pk": pk})}#etapas'
+        )
 
     return render(
         request,
-        "competitions/stage_form.html",
-        {
-            "competition": competition,
-            "stage": stage,
-            "form": form,
-        },
+        "competitions/competition_detail.html",
+        _overview_context(
+            competition,
+            stage_form_overrides={stage.id: form},
+            open_stage_id=stage.id,
+        ),
     )
 
 
 def discipline_add(request, pk):
     competition = _competition_or_404(pk)
     if request.method != "POST":
-        return redirect("competitions:structure", pk=pk)
+        return redirect(
+            f'{reverse("competitions:detail", kwargs={"pk": pk})}#disciplinas'
+        )
 
-    form = CompetitionDisciplineForm(request.POST, competition=competition)
+    form = CompetitionDisciplineForm(
+        request.POST,
+        competition=competition,
+        auto_id="id_discipline_new_%s",
+    )
     if form.is_valid():
         try:
             link = form.save()
         except IntegrityError:
-            form.add_error("discipline_name", "Essa disciplina já está associada a este concurso.")
+            form.add_error(
+                "discipline_name",
+                "Essa disciplina já está associada a este concurso.",
+            )
         else:
-            messages.success(request, f'Disciplina "{link.discipline.name}" adicionada.')
-            return redirect(f'{reverse("competitions:structure", kwargs={"pk": pk})}#disciplinas')
+            messages.success(
+                request,
+                f'Disciplina "{link.discipline.name}" adicionada.',
+            )
+            return redirect(
+                f'{reverse("competitions:detail", kwargs={"pk": pk})}#disciplinas'
+            )
 
     return render(
         request,
-        "competitions/competition_structure.html",
-        _structure_context(
+        "competitions/competition_detail.html",
+        _overview_context(
             competition,
             discipline_form=form,
             open_section="disciplines",
@@ -491,34 +601,45 @@ def discipline_edit(request, pk, link_id):
         pk=link_id,
         competition=competition,
     )
+
+    if request.method != "POST":
+        return redirect(
+            f'{reverse("competitions:detail", kwargs={"pk": pk})}'
+            f'?editar_disciplina={link.pk}#disciplinas'
+        )
+
     form = CompetitionDisciplineForm(
-        request.POST or None,
+        request.POST,
         instance=link,
         competition=competition,
+        auto_id=f"id_discipline_{link.id}_%s",
     )
 
-    if request.method == "POST" and form.is_valid():
+    if form.is_valid():
         try:
             updated = form.save()
         except IntegrityError:
-            form.add_error("discipline_name", "Essa disciplina já está associada a este concurso.")
+            form.add_error(
+                "discipline_name",
+                "Essa disciplina já está associada a este concurso.",
+            )
         else:
-            messages.success(request, f'Disciplina "{updated.discipline.name}" atualizada.')
+            messages.success(
+                request,
+                f'Disciplina "{updated.discipline.name}" atualizada.',
+            )
             return redirect(
-                "competitions:discipline_detail",
-                pk=competition.pk,
-                link_id=updated.pk,
+                f'{reverse("competitions:detail", kwargs={"pk": pk})}#disciplinas'
             )
 
     return render(
         request,
-        "competitions/discipline_form.html",
-        {
-            "competition": competition,
-            "link": link,
-            "form": form,
-            "discipline_names": Discipline.objects.values_list("name", flat=True).order_by("name"),
-        },
+        "competitions/competition_detail.html",
+        _overview_context(
+            competition,
+            discipline_form_overrides={link.id: form},
+            open_discipline_id=link.id,
+        ),
     )
 
 

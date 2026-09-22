@@ -662,7 +662,11 @@ class CompetitionNavigationTests(TestCase):
             content="Desenvolvimento de sistemas.",
         )
 
-    def test_overview_is_compact_and_links_to_main_sections(self):
+    def test_overview_is_management_hub_and_links_to_main_sections(self):
+        stage = CompetitionStage.objects.create(
+            competition=self.competition,
+            stage_type=CompetitionStage.StageType.OBJECTIVE,
+        )
         response = self.client.get(
             reverse("competitions:detail", kwargs={"pk": self.competition.pk})
         )
@@ -672,7 +676,9 @@ class CompetitionNavigationTests(TestCase):
         self.assertContains(response, "Aulas")
         self.assertContains(response, "Edital")
         self.assertContains(response, "Dashboard")
-        self.assertContains(response, "Gerenciar disciplinas")
+        self.assertContains(response, "Editar informações")
+        self.assertContains(response, "Adicionar etapa")
+        self.assertContains(response, "Adicionar disciplina")
         self.assertContains(response, "Desenvolvimento de Sistemas")
         self.assertContains(
             response,
@@ -681,17 +687,99 @@ class CompetitionNavigationTests(TestCase):
                 kwargs={"pk": self.competition.pk, "link_id": self.link.pk},
             ),
         )
+        self.assertContains(
+            response,
+            reverse(
+                "competitions:stage_edit",
+                kwargs={"pk": self.competition.pk, "stage_id": stage.pk},
+            ),
+        )
+        self.assertContains(
+            response,
+            reverse(
+                "competitions:discipline_edit",
+                kwargs={"pk": self.competition.pk, "link_id": self.link.pk},
+            ),
+        )
+        self.assertNotContains(response, "Gerenciar estrutura")
+        self.assertNotContains(response, "Gerenciar disciplinas")
+        self.assertNotContains(response, "Ver edital completo")
         self.assertNotContains(response, "Adicionar item")
 
-    def test_structure_page_contains_stage_and_discipline_management(self):
+    def test_competition_navigation_places_syllabus_after_overview(self):
+        response = self.client.get(
+            reverse("competitions:detail", kwargs={"pk": self.competition.pk})
+        )
+        content = response.content.decode()
+
+        overview_url = reverse(
+            "competitions:detail",
+            kwargs={"pk": self.competition.pk},
+        )
+        syllabus_url = reverse(
+            "competitions:syllabus",
+            kwargs={"pk": self.competition.pk},
+        )
+        lessons_url = reverse(
+            "studies:lesson_list",
+            kwargs={"pk": self.competition.pk},
+        )
+        questions_url = reverse(
+            "questions:question_list",
+            kwargs={"pk": self.competition.pk},
+        )
+        dashboard_url = reverse(
+            "competitions:dashboard",
+            kwargs={"pk": self.competition.pk},
+        )
+
+        self.assertLess(content.index(overview_url), content.index(syllabus_url))
+        self.assertLess(content.index(syllabus_url), content.index(lessons_url))
+        self.assertLess(content.index(lessons_url), content.index(questions_url))
+        self.assertLess(content.index(questions_url), content.index(dashboard_url))
+
+    def test_legacy_structure_page_redirects_to_overview(self):
         response = self.client.get(
             reverse("competitions:structure", kwargs={"pk": self.competition.pk})
         )
 
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Estrutura do concurso")
-        self.assertContains(response, "Adicionar etapa")
-        self.assertContains(response, "Adicionar disciplina")
+        self.assertRedirects(
+            response,
+            reverse("competitions:detail", kwargs={"pk": self.competition.pk}),
+        )
+
+    def test_legacy_stage_edit_get_opens_editor_on_overview(self):
+        stage = CompetitionStage.objects.create(
+            competition=self.competition,
+            stage_type=CompetitionStage.StageType.OBJECTIVE,
+        )
+
+        response = self.client.get(
+            reverse(
+                "competitions:stage_edit",
+                kwargs={"pk": self.competition.pk, "stage_id": stage.pk},
+            )
+        )
+
+        expected = (
+            f'{reverse("competitions:detail", kwargs={"pk": self.competition.pk})}'
+            f'?editar_etapa={stage.pk}#etapas'
+        )
+        self.assertRedirects(response, expected)
+
+    def test_legacy_discipline_edit_get_opens_editor_on_overview(self):
+        response = self.client.get(
+            reverse(
+                "competitions:discipline_edit",
+                kwargs={"pk": self.competition.pk, "link_id": self.link.pk},
+            )
+        )
+
+        expected = (
+            f'{reverse("competitions:detail", kwargs={"pk": self.competition.pk})}'
+            f'?editar_disciplina={self.link.pk}#disciplinas'
+        )
+        self.assertRedirects(response, expected)
 
     def test_discipline_page_shows_only_its_syllabus(self):
         response = self.client.get(

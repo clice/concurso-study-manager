@@ -22,7 +22,9 @@
             <nav class="app-global-nav" aria-label="Navegação principal">
                 <a class="app-global-nav-link {% if request.resolver_match.namespace == 'core' %}active{% endif %}" href="/">Painel</a>
                 <a class="app-global-nav-link {% if request.resolver_match.namespace == 'questions_global' %}active{% endif %}" href="{% url 'questions_global:list' %}">Questões</a>
-                {% if request.resolver_match.namespace == "core" and request.resolver_match.url_name == "home" %}
+                {% if competition and request.resolver_match.url_name != "edit" %}
+                    <a class="btn btn-sm btn-outline-primary app-header-action" href="{% url 'competitions:edit' competition.pk %}">Editar informações</a>
+                {% elif request.resolver_match.namespace == "core" and request.resolver_match.url_name == "home" %}
                     <a class="btn btn-sm btn-primary app-header-action" href="{% url 'competitions:create' %}">Novo concurso</a>
                 {% endif %}
             </nav>
