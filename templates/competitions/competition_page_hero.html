@@ -35,7 +35,7 @@
         {% endif %}
 
         {% if hero_action_url %}
-            <a class="btn btn-sm {{ hero_action_class|default:'btn-primary' }} competition-hero-action" href="{{ hero_action_url }}">{{ hero_action_label }}</a>
+            <a class="btn btn-sm {{ hero_action_class|default:'btn-primary' }} competition-hero-action" href="{{ hero_action_url }}{% if hero_action_query %}?disciplina={{ hero_action_query }}{% endif %}">{{ hero_action_label }}</a>
         {% endif %}
     </div>
 </section>
