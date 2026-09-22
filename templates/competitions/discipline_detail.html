@@ -3,18 +3,8 @@
 {% block title %}{{ link.discipline.name }} | {{ competition.name }}{% endblock %}
 
 {% block content %}
-<div class="page-heading mb-3">
-    <div>
-        <p class="eyebrow mb-1">DISCIPLINA</p>
-        <h1 class="h2 mb-1">{{ link.discipline.name }}</h1>
-        <p class="text-body-secondary mb-0">{{ competition.name }}</p>
-    </div>
-    <div class="d-flex gap-2">
-        <a class="btn btn-outline-secondary" href="{% url 'competitions:detail' competition.pk %}">Voltar</a>
-        <a class="btn btn-outline-primary" href="{% url 'competitions:discipline_edit' competition.pk link.pk %}">Editar disciplina</a>
-    </div>
-</div>
-
+{% url 'competitions:discipline_edit' competition.pk link.pk as hero_action_url %}
+{% include "competitions/competition_page_hero.html" with hero_title=link.discipline.name hero_subtitle="Disciplina do concurso" hero_action_url=hero_action_url hero_action_label="Editar disciplina" hero_action_class="btn-outline-primary" %}
 {% include "competitions/competition_nav.html" %}
 
 <div class="discipline-summary-grid mb-4">
