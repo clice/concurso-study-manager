@@ -14,7 +14,7 @@ from apps.competitions.models import (
 from apps.studies.models import Lesson
 
 from .forms import QuestionRecordForm
-from .models import QuestionRecord
+from .models import QuestionRecord, normalize_board_name
 
 
 class QuestionRecordTests(TestCase):
@@ -78,6 +78,23 @@ class QuestionRecordTests(TestCase):
         }
         payload.update(overrides)
         return payload
+
+    def test_board_normalizer_uppercases_and_consolidates_aliases(self):
+        self.assertEqual(normalize_board_name("Instituto Access"), "INSTITUTO ACCESS")
+        self.assertEqual(normalize_board_name("CESPE"), "CESPE/CEBRASPE")
+        self.assertEqual(normalize_board_name("VUNESP-SP"), "VUNESP")
+        self.assertEqual(normalize_board_name("Instituto AOCP"), "AOCP")
+
+    def test_direct_save_normalizes_board(self):
+        question = QuestionRecord.objects.create(
+            competition_discipline=self.systems_link,
+            answered_date=date(2026, 9, 1),
+            board="Instituto Access",
+            question_number="Q1",
+            result=QuestionRecord.Result.CORRECT,
+        )
+
+        self.assertEqual(question.board, "INSTITUTO ACCESS")
 
     def test_question_gets_automatic_display_code(self):
         first = QuestionRecord.objects.create(
@@ -280,6 +297,23 @@ class QuestionRecordTests(TestCase):
             self.junit.pk,
         )
         self.assertContains(response, "6 - JUnit II")
+
+    def test_question_lesson_filter_endpoint_returns_only_selected_discipline(self):
+        response = self.client.get(
+            reverse(
+                "questions:question_lessons",
+                kwargs={"pk": self.competition.pk},
+            ),
+            {"disciplina": self.systems_link.pk},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(
+            payload["lessons"],
+            [{"id": self.junit.pk, "label": f"{self.junit.code} — 6 - JUnit II"}],
+        )
+        self.assertNotContains(response, "Classes de Palavras")
 
     def test_question_list_is_paginated(self):
         for number in range(55):
